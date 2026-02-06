@@ -15,9 +15,16 @@ fn main() {
   );
 
   let mut first = true;
+  let mut density = vec![vec![0.0; 50]; 20];
 
   loop {
     simulation.tick();
+    for it in density.iter_mut().flatten() {
+      *it = 0.0;
+    }
+    for pos in simulation.particle_positions() {
+      density[pos.y as usize][pos.x as usize] += 0.5;
+    }
 
     if !first {
       print!("\x1B[22A");
@@ -28,9 +35,17 @@ fn main() {
     }
     println!();
 
-    for _y in 0..20 {
-      for _x in 0..50 {
-        print!(".");
+    for y in 0..20 {
+      for x in 0..50 {
+        let d = density[y][x];
+        print!(
+          "{}",
+          match d {
+            v if v >= 1.0 => '#',
+            v if v >= 0.5 => '.',
+            _ => ' ',
+          }
+        );
       }
       println!();
     }

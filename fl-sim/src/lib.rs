@@ -38,4 +38,8 @@ impl Simulation {
   }
 
   pub fn tick(&mut self) {}
+
+  pub fn particle_positions(&self) -> impl Iterator<Item = Point3<f32>> {
+    self.particles.iter().map(|p| p.position)
+  }
 }
