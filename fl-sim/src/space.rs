@@ -26,55 +26,58 @@ impl SpatialIndex {
     }
   }
 
-  fn pos_to_cell(&self, pos: Point3<f32>) -> u32 {
+  fn pos_to_cell(&self, pos: Point3<f32>) -> Option<u32> {
     if pos.x < 0.0 || pos.y < 0.0 || pos.z < 0.0 {
-      panic!("position outside of index");
+      return None;
     }
 
     let x = (pos.x / self.cell_size.x) as u32;
     let y = (pos.y / self.cell_size.y) as u32;
     let z = (pos.z / self.cell_size.z) as u32;
     if x >= self.size.x || y >= self.size.y || z >= self.size.z {
-      panic!("position outside of index");
+      return None;
     }
 
-    let index = x + self.size.x * (y + self.size.y * z);
-    index
+    Some(x + self.size.x * (y + self.size.y * z))
   }
 
   pub fn move_particle(&mut self, id: u32, position: Point3<f32>) {
-    let new_cell = self.pos_to_cell(position);
-    let prev_cell = self.reverse_cells.get(&ParticleId(id)).copied();
-    if prev_cell != Some(new_cell) {
-      self.reverse_cells.remove(&ParticleId(id));
-      self.reverse_cells.insert(ParticleId(id), new_cell);
+    if let Some(new_cell) = self.pos_to_cell(position) {
+      let prev_cell = self.reverse_cells.get(&ParticleId(id)).copied();
+      if prev_cell != Some(new_cell) {
+        self.reverse_cells.remove(&ParticleId(id));
+        self.reverse_cells.insert(ParticleId(id), new_cell);
 
-      if let Some(prev) = prev_cell {
-        self.cells[prev as usize].remove(&ParticleId(id));
+        if let Some(prev) = prev_cell {
+          self.cells[prev as usize].remove(&ParticleId(id));
+        }
+        self.cells[new_cell as usize].insert(ParticleId(id));
       }
-      self.cells[new_cell as usize].insert(ParticleId(id));
     }
   }
 
   pub fn neighbors(&self, id: u32) -> impl Iterator<Item = u32> {
-    let cell = self.reverse_cells.get(&ParticleId(id)).copied().expect("no such particle");
-    let x = cell % self.size.x;
-    let y = (cell / self.size.x) % self.size.y;
-    let z = cell / (self.size.x * self.size.y);
+    let iter = self.reverse_cells.get(&ParticleId(id)).copied().map(|cell| {
+      let x = cell % self.size.x;
+      let y = (cell / self.size.x) % self.size.y;
+      let z = cell / (self.size.x * self.size.y);
 
-    let x_range = x.saturating_sub(1)..=(x.saturating_add(1).min(self.size.x - 1));
-    let y_range = y.saturating_sub(1)..=(y.saturating_add(1).min(self.size.y - 1));
-    let z_range = z.saturating_sub(1)..=(z.saturating_add(1).min(self.size.z - 1));
+      let x_range = x.saturating_sub(1)..=(x.saturating_add(1).min(self.size.x - 1));
+      let y_range = y.saturating_sub(1)..=(y.saturating_add(1).min(self.size.y - 1));
+      let z_range = z.saturating_sub(1)..=(z.saturating_add(1).min(self.size.z - 1));
 
-    z_range.into_iter().flat_map(move |z| {
-      let x_range = x_range.clone();
-      y_range.clone().into_iter().flat_map(move |y| {
-        x_range.clone().into_iter().flat_map(move |x| {
-          let cell = x + self.size.x * (y + self.size.y * z);
-          self.cells[cell as usize].iter().map(|p| p.0)
+      z_range.into_iter().flat_map(move |z| {
+        let x_range = x_range.clone();
+        y_range.clone().into_iter().flat_map(move |y| {
+          x_range.clone().into_iter().flat_map(move |x| {
+            let cell = x + self.size.x * (y + self.size.y * z);
+            self.cells[cell as usize].iter().map(|p| p.0)
+          })
         })
       })
-    })
+    });
+
+    iter.into_iter().flatten()
   }
 }
 
