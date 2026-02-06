@@ -24,7 +24,6 @@ struct Particle {
   position: Point3<f32>,
   velocity: Vector3<f32>,
   density:  f32,
-  pressure: f32,
 }
 
 impl Simulation {
@@ -42,11 +41,24 @@ impl Simulation {
       position: pos,
       velocity: vector![0.0, 0.0, 0.0],
       density:  0.0,
-      pressure: 0.0,
     });
   }
 
-  pub fn tick(&mut self) {}
+  pub fn tick(&mut self) {
+    const GRAVITY: Vector3<f32> = vector![0.0, 9.8, 0.0];
+
+    for (id, particle) in self.particles.iter_mut().enumerate() {
+      particle.velocity += GRAVITY * self.settings.delta_time;
+      particle.position += particle.velocity * self.settings.delta_time;
+
+      if particle.position.y >= self.size.y {
+        particle.position.y = self.size.y;
+        particle.velocity.y *= -self.settings.constraint;
+      }
+
+      self.index.move_particle(id as u32, particle.position);
+    }
+  }
 
   pub fn particle_positions(&self) -> impl Iterator<Item = Point3<f32>> {
     self.particles.iter().map(|p| p.position)

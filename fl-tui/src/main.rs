@@ -9,7 +9,7 @@ fn main() {
       smoothing_length: 1.0,
       rest_density:     1.0,
       iterations:       10,
-      constraint:       1.0,
+      constraint:       0.5,
       viscosity:        1.0,
     },
   );
