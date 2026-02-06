@@ -33,6 +33,10 @@ dependencies = [
 [[package]]
 name = "fl-tui"
 version = "0.1.0"
+dependencies = [
+ "fl-sim",
+ "nalgebra",
+]
 
 [[package]]
 name = "glam"
