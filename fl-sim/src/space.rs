@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use nalgebra::{Vector3, vector};
+use nalgebra::{Point3, Vector3, vector};
 
 pub struct SpatialIndex {
   cell_size:     Vector3<f32>,
@@ -26,7 +26,7 @@ impl SpatialIndex {
     }
   }
 
-  fn pos_to_cell(&self, pos: Vector3<f32>) -> u32 {
+  fn pos_to_cell(&self, pos: Point3<f32>) -> u32 {
     if pos.x < 0.0 || pos.y < 0.0 || pos.z < 0.0 {
       panic!("position outside of index");
     }
@@ -42,7 +42,7 @@ impl SpatialIndex {
     index
   }
 
-  pub fn move_particle(&mut self, id: u32, position: Vector3<f32>) {
+  pub fn move_particle(&mut self, id: u32, position: Point3<f32>) {
     let new_cell = self.pos_to_cell(position);
     let prev_cell = self.reverse_cells.get(&ParticleId(id)).copied();
     if prev_cell != Some(new_cell) {
@@ -80,16 +80,18 @@ impl SpatialIndex {
 
 #[cfg(test)]
 mod tests {
+  use nalgebra::point;
+
   use super::*;
 
   #[test]
   fn it_works() {
     let mut index = SpatialIndex::new(vector![10.0, 10.0, 10.0], vector![10, 10, 10]);
-    index.move_particle(0, vector![0.5, 0.5, 0.5]);
+    index.move_particle(0, point![0.5, 0.5, 0.5]);
 
     assert_eq!(index.cells[0].len(), 1);
 
-    index.move_particle(0, vector![1.5, 0.5, 0.5]);
+    index.move_particle(0, point![1.5, 0.5, 0.5]);
 
     assert_eq!(index.cells[0].len(), 0);
     assert_eq!(index.cells[1].len(), 1);
