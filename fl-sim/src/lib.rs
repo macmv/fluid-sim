@@ -1,5 +1,7 @@
 use nalgebra::{Point3, Vector3};
 
+mod space;
+
 pub struct Simulation {
   delta_time:       f32,
   smoothing_length: f32,
