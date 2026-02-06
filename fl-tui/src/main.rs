@@ -3,7 +3,7 @@ use nalgebra::{point, vector};
 
 fn main() {
   let mut simulation = Simulation::new(
-    vector![10.0, 10.0, 10.0],
+    vector![50.0, 20.0, 1.0],
     fl_sim::Settings {
       delta_time:       0.1,
       smoothing_length: 1.0,
@@ -29,7 +29,7 @@ fn main() {
       *it = 0.0;
     }
     for pos in simulation.particle_positions() {
-      density[pos.y as usize][pos.x as usize] += 0.5;
+      density[pos.y.clamp(0.0, 19.0) as usize][pos.x.clamp(0.0, 49.0) as usize] += 0.5;
     }
 
     if !first {
