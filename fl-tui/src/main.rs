@@ -1,5 +1,5 @@
 use fl_sim::Simulation;
-use nalgebra::vector;
+use nalgebra::{point, vector};
 
 fn main() {
   let mut simulation = Simulation::new(
@@ -13,6 +13,12 @@ fn main() {
       viscosity:        1.0,
     },
   );
+
+  for y in 0..10 {
+    for x in 0..10 {
+      simulation.add_particle(point![x as f32, y as f32, 0.0]);
+    }
+  }
 
   let mut first = true;
   let mut density = vec![vec![0.0; 50]; 20];

@@ -37,6 +37,15 @@ impl Simulation {
     }
   }
 
+  pub fn add_particle(&mut self, pos: Point3<f32>) {
+    self.particles.push(Particle {
+      position: pos,
+      velocity: vector![0.0, 0.0, 0.0],
+      density:  0.0,
+      pressure: 0.0,
+    });
+  }
+
   pub fn tick(&mut self) {}
 
   pub fn particle_positions(&self) -> impl Iterator<Item = Point3<f32>> {
