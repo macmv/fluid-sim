@@ -55,6 +55,27 @@ impl SpatialIndex {
       self.cells[new_cell as usize].insert(ParticleId(id));
     }
   }
+
+  pub fn neighbors(&self, id: u32) -> impl Iterator<Item = u32> {
+    let cell = self.reverse_cells.get(&ParticleId(id)).copied().expect("no such particle");
+    let x = cell % self.size.x;
+    let y = (cell / self.size.x) % self.size.y;
+    let z = cell / (self.size.x * self.size.y);
+
+    let x_range = x.saturating_sub(1)..=(x.saturating_add(1).min(self.size.x - 1));
+    let y_range = y.saturating_sub(1)..=(y.saturating_add(1).min(self.size.y - 1));
+    let z_range = z.saturating_sub(1)..=(z.saturating_add(1).min(self.size.z - 1));
+
+    z_range.into_iter().flat_map(move |z| {
+      let x_range = x_range.clone();
+      y_range.clone().into_iter().flat_map(move |y| {
+        x_range.clone().into_iter().flat_map(move |x| {
+          let cell = x + self.size.x * (y + self.size.y * z);
+          self.cells[cell as usize].iter().map(|p| p.0)
+        })
+      })
+    })
+  }
 }
 
 #[cfg(test)]
