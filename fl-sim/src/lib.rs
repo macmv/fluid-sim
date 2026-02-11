@@ -64,3 +64,21 @@ impl Simulation {
     self.particles.iter().map(|p| p.position)
   }
 }
+
+fn kernel_poly6(distance: f32, radius: f32) -> f32 {
+  if distance >= radius {
+    return 0.0;
+  }
+
+  // TODO: Normalization constant?
+  (radius.powi(2) - distance.powi(2)).powi(3)
+}
+
+fn kernel_spiky_gradient(displacement: Vector3<f32>, radius: f32) -> Vector3<f32> {
+  let distance = displacement.norm();
+  if distance == 0.0 || distance >= radius {
+    return vector![0.0, 0.0, 0.0];
+  }
+
+  (displacement / distance) * -(radius - distance).powi(2)
+}
