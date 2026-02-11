@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use nalgebra::{Point3, Vector3, vector};
 
 pub struct SpatialIndex {
-  cell_size:     Vector3<f32>,
+  radius:        f32,
   size:          Vector3<u32>,
   cells:         Vec<HashSet<ParticleId>>,
   reverse_cells: HashMap<ParticleId, u32>,
@@ -13,13 +13,15 @@ pub struct SpatialIndex {
 struct ParticleId(u32);
 
 impl SpatialIndex {
-  pub fn new(world_size: Vector3<f32>, size: Vector3<u32>) -> SpatialIndex {
+  pub fn new(world_size: Vector3<f32>, radius: f32) -> SpatialIndex {
+    let size = vector![
+      (world_size.x / radius).ceil() as u32,
+      (world_size.y / radius).ceil() as u32,
+      (world_size.z / radius).ceil() as u32
+    ];
+
     SpatialIndex {
-      cell_size: vector![
-        world_size.x / size.x as f32,
-        world_size.y / size.y as f32,
-        world_size.z / size.z as f32
-      ],
+      radius,
       size,
       cells: vec![HashSet::new(); (size.x * size.y * size.z) as usize],
       reverse_cells: HashMap::new(),
@@ -31,9 +33,9 @@ impl SpatialIndex {
       return None;
     }
 
-    let x = (pos.x / self.cell_size.x) as u32;
-    let y = (pos.y / self.cell_size.y) as u32;
-    let z = (pos.z / self.cell_size.z) as u32;
+    let x = (pos.x / self.radius) as u32;
+    let y = (pos.y / self.radius) as u32;
+    let z = (pos.z / self.radius) as u32;
     if x >= self.size.x || y >= self.size.y || z >= self.size.z {
       return None;
     }
@@ -89,7 +91,7 @@ mod tests {
 
   #[test]
   fn it_works() {
-    let mut index = SpatialIndex::new(vector![10.0, 10.0, 10.0], vector![10, 10, 10]);
+    let mut index = SpatialIndex::new(vector![10.0, 10.0, 10.0], 1.0);
     index.move_particle(0, point![0.5, 0.5, 0.5]);
 
     assert_eq!(index.cells[0].len(), 1);

@@ -28,12 +28,7 @@ struct Particle {
 
 impl Simulation {
   pub fn new(size: Vector3<f32>, settings: Settings) -> Simulation {
-    Simulation {
-      settings,
-      size,
-      particles: vec![],
-      index: SpatialIndex::new(size, vector![10, 10, 10]),
-    }
+    Simulation { settings, size, particles: vec![], index: SpatialIndex::new(size, 1.0) }
   }
 
   pub fn add_particle(&mut self, pos: Point3<f32>) {
