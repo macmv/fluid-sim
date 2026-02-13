@@ -37,6 +37,9 @@ const PARTICLE_SPACING: f32 = 0.5; // particles/m
 const PARTICLE_MASS: f32 = 250.0; // kg
 const LAMBDA_EPSILON: f32 = 1e-6;
 const ITERATIONS: u32 = 15;
+const SCORR_K: f32 = 0.001;
+const SCORR_N: i32 = 4;
+const SCORR_Q: f32 = 0.3;
 
 impl Simulation {
   pub fn new(size: Vector2<f32>, settings: Settings) -> Simulation {
@@ -108,7 +111,7 @@ impl Simulation {
         }
 
         gradient_sum_squared += gradient_sum.norm_squared();
-        let density_constraint = estimated_density / REST_DENSITY - 1.0;
+        let density_constraint = (estimated_density / REST_DENSITY - 1.0).max(-0.05);
 
         self.particles[id].density = estimated_density;
         self.particles[id].density_lambda =
@@ -130,11 +133,12 @@ impl Simulation {
           }
 
           let kernel_gradient = kernel_spiky_gradient(delta, self.index.radius());
+          let s_corr = tensile_correction(distance, self.index.radius());
 
           // This makes the correction symmetric:
           // equal and opposite influence between i and j (momentum-friendly).
           total_position_delta +=
-            (p.density_lambda + n.density_lambda) * PARTICLE_MASS * kernel_gradient;
+            (p.density_lambda + n.density_lambda + s_corr) * PARTICLE_MASS * kernel_gradient;
         }
 
         position_deltas[id] = total_position_delta / REST_DENSITY;
@@ -180,4 +184,13 @@ fn kernel_spiky_gradient(displacement: Vector2<f32>, radius: f32) -> Vector2<f32
 
   let coeff = NUMERATOR_2D / (FACTOR_2D * PI * radius.powi(5));
   (displacement / distance) * (coeff * (radius - distance).powi(2))
+}
+
+fn tensile_correction(distance: f32, radius: f32) -> f32 {
+  let numerator = kernel_poly6(distance, radius);
+  let denominator = kernel_poly6(SCORR_Q * radius, radius);
+  if denominator <= 0.0 {
+    return 0.0;
+  }
+  -SCORR_K * (numerator / denominator).powi(SCORR_N)
 }
