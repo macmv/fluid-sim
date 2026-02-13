@@ -35,7 +35,7 @@ const REST_DENSITY: f32 = 1000.0; // kg/m^2
 const PARTICLE_SPACING: f32 = 0.5; // particles/m
 const PARTICLE_MASS: f32 = 250.0; // kg
 const LAMBDA_EPSILON: f32 = 1e-6;
-const ITERATIONS: u32 = 3;
+const ITERATIONS: u32 = 15;
 
 impl Simulation {
   pub fn new(size: Vector2<f32>, settings: Settings) -> Simulation {
