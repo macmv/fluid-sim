@@ -1,4 +1,4 @@
-use nalgebra::{Point3, Vector3, point, vector};
+use nalgebra::{Point2, Vector2, point, vector};
 
 use crate::space::SpatialIndex;
 
@@ -15,28 +15,28 @@ pub struct Settings {
 
 pub struct Simulation {
   settings:  Settings,
-  size:      Vector3<f32>,
+  size:      Vector2<f32>,
   particles: Vec<Particle>,
   index:     SpatialIndex,
 }
 
 #[derive(Debug)]
 struct Particle {
-  position:       Point3<f32>,
-  velocity:       Vector3<f32>,
+  position:       Point2<f32>,
+  velocity:       Vector2<f32>,
   density_lambda: f32,
 
-  predicted: Point3<f32>,
+  predicted: Point2<f32>,
 }
 
-const GRAVITY: Vector3<f32> = vector![0.0, 9.8, 0.0];
-const REST_DENSITY: f32 = 1000.0; // kg/m^3
+const GRAVITY: Vector2<f32> = vector![0.0, 9.8];
+const REST_DENSITY: f32 = 1000.0; // kg/m^2
 const PARTICLE_SPACING: f32 = 0.5; // particles/m
 const LAMBDA_EPSILON: f32 = 1e-6;
 const ITERATIONS: u32 = 3;
 
 impl Simulation {
-  pub fn new(size: Vector3<f32>, settings: Settings) -> Simulation {
+  pub fn new(size: Vector2<f32>, settings: Settings) -> Simulation {
     Simulation {
       settings,
       size,
@@ -45,13 +45,13 @@ impl Simulation {
     }
   }
 
-  pub fn add_particle(&mut self, pos: Point3<f32>) {
+  pub fn add_particle(&mut self, pos: Point2<f32>) {
     self.particles.push(Particle {
       position:       pos,
-      velocity:       vector![0.0, 0.0, 0.0],
+      velocity:       vector![0.0, 0.0],
       density_lambda: 0.0,
 
-      predicted: point![0.0, 0.0, 0.0],
+      predicted: point![0.0, 0.0],
     });
   }
 
@@ -71,7 +71,7 @@ impl Simulation {
     for _ in 0..ITERATIONS {
       for id in 0..self.particles.len() {
         let mut estimated_density = 0.0;
-        let mut gradient_sum = vector![0.0, 0.0, 0.0];
+        let mut gradient_sum = vector![0.0, 0.0];
         let mut gradient_sum_squared = 0.0;
 
         for neighbor in self.index.neighbors(id as u32) {
@@ -99,7 +99,7 @@ impl Simulation {
       }
 
       for id in 0..self.particles.len() {
-        let mut total_position_delta = vector![0.0, 0.0, 0.0];
+        let mut total_position_delta = vector![0.0, 0.0];
 
         for neighbor in self.index.neighbors(id as u32) {
           let p = &self.particles[id];
@@ -128,7 +128,7 @@ impl Simulation {
     }
   }
 
-  pub fn particle_positions(&self) -> impl Iterator<Item = Point3<f32>> {
+  pub fn particle_positions(&self) -> impl Iterator<Item = Point2<f32>> {
     self.particles.iter().map(|p| p.position)
   }
 }
@@ -142,10 +142,10 @@ fn kernel_poly6(distance: f32, radius: f32) -> f32 {
   (radius.powi(2) - distance.powi(2)).powi(3)
 }
 
-fn kernel_spiky_gradient(displacement: Vector3<f32>, radius: f32) -> Vector3<f32> {
+fn kernel_spiky_gradient(displacement: Vector2<f32>, radius: f32) -> Vector2<f32> {
   let distance = displacement.norm();
   if distance == 0.0 || distance >= radius {
-    return vector![0.0, 0.0, 0.0];
+    return vector![0.0, 0.0];
   }
 
   (displacement / distance) * -(radius - distance).powi(2)

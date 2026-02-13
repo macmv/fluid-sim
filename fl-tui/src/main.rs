@@ -3,7 +3,7 @@ use nalgebra::{point, vector};
 
 fn main() {
   let mut simulation = Simulation::new(
-    vector![50.0, 20.0, 1.0],
+    vector![50.0, 20.0],
     fl_sim::Settings {
       delta_time:       0.1,
       smoothing_length: 1.0,
@@ -16,7 +16,7 @@ fn main() {
 
   for y in 0..10 {
     for x in 0..10 {
-      simulation.add_particle(point![x as f32 / 2.0, y as f32 / 2.0, 0.0]);
+      simulation.add_particle(point![x as f32 / 2.0, y as f32 / 2.0]);
     }
   }
 
