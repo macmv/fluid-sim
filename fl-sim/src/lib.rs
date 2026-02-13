@@ -44,7 +44,7 @@ impl Simulation {
       settings,
       size,
       particles: vec![],
-      index: SpatialIndex::new(size, 1.5 * PARTICLE_SPACING),
+      index: SpatialIndex::new(size, 2.0 * PARTICLE_SPACING),
     }
   }
 
