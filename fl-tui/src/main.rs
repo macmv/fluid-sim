@@ -16,7 +16,7 @@ fn main() {
 
   for y in 0..10 {
     for x in 0..10 {
-      simulation.add_particle(point![x as f32, y as f32, 0.0]);
+      simulation.add_particle(point![x as f32 / 2.0, y as f32 / 2.0, 0.0]);
     }
   }
 

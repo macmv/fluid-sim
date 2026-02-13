@@ -28,6 +28,8 @@ impl SpatialIndex {
     }
   }
 
+  pub fn radius(&self) -> f32 { self.radius }
+
   fn pos_to_cell(&self, pos: Point3<f32>) -> Option<u32> {
     if pos.x < 0.0 || pos.y < 0.0 || pos.z < 0.0 {
       return None;
