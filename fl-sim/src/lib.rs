@@ -122,6 +122,7 @@ impl Simulation {
         }
 
         self.particles[id].predicted += total_position_delta / REST_DENSITY;
+        self.index.move_particle(id as u32, self.particles[id].predicted);
       }
     }
 
