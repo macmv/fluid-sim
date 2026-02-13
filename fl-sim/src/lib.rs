@@ -22,12 +22,13 @@ pub struct Simulation {
 }
 
 #[derive(Debug)]
-struct Particle {
-  position:       Point2<f32>,
-  velocity:       Vector2<f32>,
-  density_lambda: f32,
+pub struct Particle {
+  pub position: Point2<f32>,
+  pub velocity: Vector2<f32>,
+  pub density:  f32,
 
-  predicted: Point2<f32>,
+  density_lambda: f32,
+  predicted:      Point2<f32>,
 }
 
 const GRAVITY: Vector2<f32> = vector![0.0, 9.8];
@@ -49,11 +50,12 @@ impl Simulation {
 
   pub fn add_particle(&mut self, pos: Point2<f32>) {
     self.particles.push(Particle {
-      position:       pos,
-      velocity:       vector![0.0, 0.0],
-      density_lambda: 0.0,
+      position: pos,
+      velocity: vector![0.0, 0.0],
+      density:  0.0,
 
-      predicted: point![0.0, 0.0],
+      density_lambda: 0.0,
+      predicted:      point![0.0, 0.0],
     });
   }
 
@@ -97,6 +99,7 @@ impl Simulation {
         gradient_sum_squared += gradient_sum.norm_squared();
         let density_constraint = estimated_density / REST_DENSITY - 1.0;
 
+        self.particles[id].density = estimated_density;
         self.particles[id].density_lambda =
           -density_constraint / (gradient_sum_squared + LAMBDA_EPSILON);
       }
@@ -132,9 +135,7 @@ impl Simulation {
     }
   }
 
-  pub fn particle_positions(&self) -> impl Iterator<Item = Point2<f32>> {
-    self.particles.iter().map(|p| p.position)
-  }
+  pub fn particles(&self) -> impl Iterator<Item = &Particle> { self.particles.iter() }
 }
 
 fn kernel_poly6(distance: f32, radius: f32) -> f32 {
