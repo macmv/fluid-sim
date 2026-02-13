@@ -34,7 +34,7 @@ fn main() {
   );
 
   for y in 0..20 {
-    for x in 20..30 {
+    for x in 20..80 {
       simulation.add_particle(point![x as f32 / 2.0, y as f32 / 2.0]);
     }
   }
