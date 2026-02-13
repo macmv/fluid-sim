@@ -79,7 +79,7 @@ impl Simulation {
         for neighbor in self.index.neighbors(id as u32) {
           let p = &self.particles[id];
           let n = &self.particles[neighbor as usize];
-          let delta = n.predicted - p.predicted;
+          let delta = p.predicted - n.predicted;
           let distance = delta.norm();
 
           if distance >= self.index.radius() {
@@ -107,7 +107,7 @@ impl Simulation {
         for neighbor in self.index.neighbors(id as u32) {
           let p = &self.particles[id];
           let n = &self.particles[neighbor as usize];
-          let delta = n.predicted - p.predicted;
+          let delta = p.predicted - n.predicted;
           let distance = delta.norm();
 
           if distance >= self.index.radius() {
