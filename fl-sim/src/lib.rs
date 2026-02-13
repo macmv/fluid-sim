@@ -33,6 +33,7 @@ struct Particle {
 const GRAVITY: Vector2<f32> = vector![0.0, 9.8];
 const REST_DENSITY: f32 = 1000.0; // kg/m^2
 const PARTICLE_SPACING: f32 = 0.5; // particles/m
+const PARTICLE_MASS: f32 = 250.0; // kg
 const LAMBDA_EPSILON: f32 = 1e-6;
 const ITERATIONS: u32 = 3;
 
@@ -85,9 +86,10 @@ impl Simulation {
             continue;
           }
 
-          estimated_density += kernel_poly6(distance, self.index.radius());
+          estimated_density += PARTICLE_MASS * kernel_poly6(distance, self.index.radius());
 
-          let gradient = kernel_spiky_gradient(delta, self.index.radius()) / REST_DENSITY;
+          let gradient =
+            kernel_spiky_gradient(delta, self.index.radius()) * (PARTICLE_MASS / REST_DENSITY);
           gradient_sum += gradient;
           gradient_sum_squared += gradient.norm_squared();
         }
