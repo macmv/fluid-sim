@@ -1,4 +1,5 @@
 use nalgebra::{Point2, Vector2, point, vector};
+use std::f32::consts::PI;
 
 use crate::space::SpatialIndex;
 
@@ -134,19 +135,26 @@ impl Simulation {
 }
 
 fn kernel_poly6(distance: f32, radius: f32) -> f32 {
+  const NUMERATOR_2D: f32 = 4.0;
+  const FACTOR_2D: f32 = 1.0;
+
   if distance >= radius {
     return 0.0;
   }
 
-  // TODO: Normalization constant?
-  (radius.powi(2) - distance.powi(2)).powi(3)
+  let coeff = NUMERATOR_2D / (FACTOR_2D * PI * radius.powi(8));
+  coeff * (radius.powi(2) - distance.powi(2)).powi(3)
 }
 
 fn kernel_spiky_gradient(displacement: Vector2<f32>, radius: f32) -> Vector2<f32> {
+  const NUMERATOR_2D: f32 = -30.0;
+  const FACTOR_2D: f32 = 1.0;
+
   let distance = displacement.norm();
   if distance == 0.0 || distance >= radius {
     return vector![0.0, 0.0];
   }
 
-  (displacement / distance) * -(radius - distance).powi(2)
+  let coeff = NUMERATOR_2D / (FACTOR_2D * PI * radius.powi(5));
+  (displacement / distance) * (coeff * (radius - distance).powi(2))
 }
