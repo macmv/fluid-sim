@@ -64,7 +64,18 @@ impl Simulation {
       particle.velocity += GRAVITY * self.settings.delta_time;
       particle.predicted = particle.position + particle.velocity * self.settings.delta_time;
 
-      if particle.predicted.y >= self.size.y {
+      if particle.predicted.x < 0.0 {
+        particle.predicted.x = 0.0;
+        particle.velocity.x *= -self.settings.constraint;
+      } else if particle.predicted.x > self.size.x {
+        particle.predicted.x = self.size.x;
+        particle.velocity.x *= -self.settings.constraint;
+      }
+
+      if particle.predicted.y < 0.0 {
+        particle.predicted.y = 0.0;
+        particle.velocity.y *= -self.settings.constraint;
+      } else if particle.predicted.y > self.size.y {
         particle.predicted.y = self.size.y;
         particle.velocity.y *= -self.settings.constraint;
       }
