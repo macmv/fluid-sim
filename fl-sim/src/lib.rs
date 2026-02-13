@@ -115,6 +115,7 @@ impl Simulation {
           -density_constraint / (gradient_sum_squared + LAMBDA_EPSILON);
       }
 
+      let mut position_deltas = vec![vector![0.0, 0.0]; self.particles.len()];
       for id in 0..self.particles.len() {
         let mut total_position_delta = vector![0.0, 0.0];
 
@@ -132,10 +133,17 @@ impl Simulation {
 
           // This makes the correction symmetric:
           // equal and opposite influence between i and j (momentum-friendly).
-          total_position_delta += (p.density_lambda + n.density_lambda) * kernel_gradient;
+          total_position_delta +=
+            (p.density_lambda + n.density_lambda) * PARTICLE_MASS * kernel_gradient;
         }
 
-        self.particles[id].predicted += total_position_delta / REST_DENSITY;
+        position_deltas[id] = total_position_delta / REST_DENSITY;
+      }
+
+      for id in 0..self.particles.len() {
+        self.particles[id].predicted += position_deltas[id];
+        self.particles[id].predicted.x = self.particles[id].predicted.x.clamp(0.0, self.size.x);
+        self.particles[id].predicted.y = self.particles[id].predicted.y.clamp(0.0, self.size.y);
         self.index.move_particle(id as u32, self.particles[id].predicted);
       }
     }
