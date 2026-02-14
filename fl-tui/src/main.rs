@@ -24,11 +24,11 @@ fn main() {
   let mut simulation = Simulation::new(
     vector![50.0, 20.0],
     fl_sim::Settings {
-      delta_time:       0.1,
+      delta_time:       0.01,
       smoothing_length: 1.0,
       rest_density:     1.0,
       iterations:       10,
-      constraint:       0.5,
+      constraint:       0.0,
       viscosity:        1.0,
     },
   );
