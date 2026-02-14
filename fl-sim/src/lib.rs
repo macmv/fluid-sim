@@ -132,6 +132,15 @@ impl Simulation {
           let delta = p.predicted - n.predicted;
           let distance = delta.norm();
 
+          // Two particles next to each other => bad news bears
+          if distance == 0.0 {
+            if (id as u32) < neighbor {
+              total_position_delta +=
+                (p.density_lambda + n.density_lambda) * PARTICLE_MASS * vector![1.0, 0.0];
+            }
+            continue;
+          }
+
           if distance >= self.index.radius() {
             continue;
           }
