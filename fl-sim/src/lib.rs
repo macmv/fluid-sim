@@ -27,12 +27,12 @@ const DELTA_TIME: f32 = 0.01;
 const PARTICLE_SPACING: f32 = 0.5;
 const PARTICLE_MASS: f32 = 0.25;
 const LAMBDA_EPSILON: f32 = 1e-6;
-const ITERATIONS: u32 = 5;
+const ITERATIONS: u32 = 20;
 const SCORR_K: f32 = 0.001;
 const SCORR_N: i32 = 4;
 const SCORR_Q: f32 = 0.3;
 const CONSTRAINT: f32 = 0.4;
-const FROUDE_NUMBER: f32 = 0.05;
+const FROUDE_NUMBER: f32 = 0.01;
 const REYNOLDS_NUMBER: f32 = 200.0;
 
 impl Simulation {
