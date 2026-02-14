@@ -32,7 +32,7 @@ const SCORR_K: f32 = 0.001;
 const SCORR_N: i32 = 4;
 const SCORR_Q: f32 = 0.3;
 const CONSTRAINT: f32 = 0.4;
-const FROUDE_NUMBER: f32 = 0.1;
+const FROUDE_NUMBER: f32 = 0.05;
 const REYNOLDS_NUMBER: f32 = 200.0;
 
 impl Simulation {
