@@ -21,8 +21,11 @@ fn density_to_rgb(density: f32) -> (u8, u8, u8) {
 }
 
 fn main() {
+  const WIDTH: usize = 50;
+  const HEIGHT: usize = 20;
+
   let mut simulation = Simulation::new(
-    vector![50.0, 20.0],
+    vector![WIDTH as f32, HEIGHT as f32],
     fl_sim::Settings {
       delta_time:       0.01,
       smoothing_length: 1.0,
@@ -33,15 +36,15 @@ fn main() {
     },
   );
 
-  for y in 0..20 {
+  for y in 20..40 {
     for x in 20..80 {
       simulation.add_particle(point![x as f32 / 2.0, y as f32 / 2.0]);
     }
   }
 
   let mut first = true;
-  let mut density = vec![vec![0.0; 50]; 20];
-  let mut counts = vec![vec![0u32; 50]; 20];
+  let mut density = vec![vec![0.0; WIDTH]; HEIGHT];
+  let mut counts = vec![vec![0u32; WIDTH]; HEIGHT];
 
   let mut next = std::time::Instant::now() + std::time::Duration::from_millis(10);
 
@@ -54,13 +57,13 @@ fn main() {
       *it = 0;
     }
     for p in simulation.particles() {
-      let y = p.position.y.clamp(0.0, 19.0) as usize;
-      let x = p.position.x.clamp(0.0, 49.0) as usize;
+      let y = p.position.y.clamp(0.0, HEIGHT as f32 - 1.0) as usize;
+      let x = p.position.x.clamp(0.0, WIDTH as f32 - 1.0) as usize;
       density[y][x] += p.density;
       counts[y][x] += 1;
     }
-    for y in 0..20 {
-      for x in 0..50 {
+    for y in 0..HEIGHT {
+      for x in 0..WIDTH {
         if counts[y][x] > 0 {
           density[y][x] /= counts[y][x] as f32;
         }
@@ -71,13 +74,13 @@ fn main() {
       print!("\x1B[22A");
     }
 
-    for _ in 0..50 {
+    for _ in 0..WIDTH {
       print!("=");
     }
     println!();
 
-    for y in 0..20 {
-      for x in 0..50 {
+    for y in (0..HEIGHT).rev() {
+      for x in 0..WIDTH {
         let d = density[y][x];
         let (r, g, b) = density_to_rgb(d);
         if d >= 0.1 {
@@ -95,7 +98,7 @@ fn main() {
       println!("\x1b[0m");
     }
 
-    for _ in 0..50 {
+    for _ in 0..WIDTH {
       print!("=");
     }
     println!();

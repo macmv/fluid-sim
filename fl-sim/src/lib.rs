@@ -31,7 +31,7 @@ pub struct Particle {
   predicted:      Point2<f32>,
 }
 
-const GRAVITY: Vector2<f32> = vector![0.0, 9.8];
+const GRAVITY: Vector2<f32> = vector![0.0, -9.8];
 const REST_DENSITY: f32 = 1000.0; // kg/m^2
 const PARTICLE_SPACING: f32 = 0.5; // particles/m
 const PARTICLE_MASS: f32 = 250.0; // kg
