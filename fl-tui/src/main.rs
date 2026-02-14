@@ -6,13 +6,13 @@ fn density_to_rgb(density: f32) -> (u8, u8, u8) {
   let g;
   let b;
 
-  if density <= 1000.0 {
-    let t = (density / 1000.0).clamp(0.0, 1.0);
+  if density <= 1.0 {
+    let t = density.clamp(0.0, 1.0);
     r = 0.0;
     g = 255.0 * t;
     b = 255.0 * (1.0 - t);
   } else {
-    let t = ((density - 1000.0) / 1000.0).clamp(0.0, 1.0);
+    let t = (density - 1.0).clamp(0.0, 1.0);
     r = 255.0 * t;
     g = 255.0 * (1.0 - t);
     b = 0.0;
