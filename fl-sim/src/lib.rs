@@ -111,22 +111,6 @@ impl Simulation {
           gradient_sum_squared += gradient.norm_squared();
         }
 
-        for ghost in wall_ghost_positions(self.particles[id].predicted, self.size) {
-          let delta = self.particles[id].predicted - ghost;
-          let distance = delta.norm();
-          if distance >= self.index.radius() {
-            continue;
-          }
-
-          let weight = kernel_poly6(distance, self.index.radius());
-          estimated_density += PARTICLE_MASS * weight;
-
-          let gradient =
-            kernel_spiky_gradient(delta, self.index.radius()) * (PARTICLE_MASS / REST_DENSITY);
-          gradient_sum += gradient;
-          gradient_sum_squared += gradient.norm_squared();
-        }
-
         gradient_sum_squared += gradient_sum.norm_squared();
         let density_constraint = (estimated_density / REST_DENSITY - 1.0).max(-0.005);
 
@@ -156,18 +140,6 @@ impl Simulation {
           // equal and opposite influence between i and j (momentum-friendly).
           total_position_delta +=
             (p.density_lambda + n.density_lambda + s_corr) * PARTICLE_MASS * kernel_gradient;
-        }
-
-        for ghost in wall_ghost_positions(self.particles[id].predicted, self.size) {
-          let delta = self.particles[id].predicted - ghost;
-          let distance = delta.norm();
-          if distance >= self.index.radius() {
-            continue;
-          }
-
-          let kernel_gradient = kernel_spiky_gradient(delta, self.index.radius());
-          total_position_delta +=
-            self.particles[id].density_lambda * PARTICLE_MASS * kernel_gradient;
         }
 
         position_deltas[id] = total_position_delta / REST_DENSITY;
@@ -222,22 +194,4 @@ fn tensile_correction(distance: f32, radius: f32) -> f32 {
     return 0.0;
   }
   -SCORR_K * (numerator / denominator).powi(SCORR_N)
-}
-
-fn wall_ghost_positions(position: Point2<f32>, size: Vector2<f32>) -> [Point2<f32>; 8] {
-  let left_x = -position.x;
-  let right_x = 2.0 * size.x - position.x;
-  let bottom_y = -position.y;
-  let top_y = 2.0 * size.y - position.y;
-
-  [
-    point![left_x, position.y],
-    point![right_x, position.y],
-    point![position.x, bottom_y],
-    point![position.x, top_y],
-    point![left_x, bottom_y],
-    point![left_x, top_y],
-    point![right_x, bottom_y],
-    point![right_x, top_y],
-  ]
 }
