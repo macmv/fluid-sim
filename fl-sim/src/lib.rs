@@ -40,7 +40,6 @@ const ITERATIONS: u32 = 15;
 const SCORR_K: f32 = 0.001;
 const SCORR_N: i32 = 4;
 const SCORR_Q: f32 = 0.3;
-const VELOCITY_DAMPING: f32 = 0.995;
 
 impl Simulation {
   pub fn new(size: Vector2<f32>, settings: Settings) -> Simulation {
@@ -184,7 +183,6 @@ impl Simulation {
 
     for particle in self.particles.iter_mut() {
       particle.velocity = (particle.predicted - particle.position) / self.settings.delta_time;
-      particle.velocity *= VELOCITY_DAMPING;
       particle.position = particle.predicted;
     }
   }
