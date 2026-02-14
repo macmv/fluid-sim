@@ -33,6 +33,7 @@ const SCORR_N: i32 = 4;
 const SCORR_Q: f32 = 0.3;
 const CONSTRAINT: f32 = 0.4;
 const FROUDE_NUMBER: f32 = 0.1;
+const REYNOLDS_NUMBER: f32 = 200.0;
 
 impl Simulation {
   pub fn new(size: Vector2<f32>) -> Simulation {
@@ -157,6 +158,11 @@ impl Simulation {
 
     for particle in self.particles.iter_mut() {
       particle.velocity = (particle.predicted - particle.position) / DELTA_TIME;
+
+      // TODO: Maybe remove if the reynolds number isn't really doing much
+      let viscous_decay = (1.0 - (1.0 / REYNOLDS_NUMBER) * DELTA_TIME).clamp(0.0, 1.0);
+      particle.velocity *= viscous_decay;
+
       particle.position = particle.predicted;
     }
   }
