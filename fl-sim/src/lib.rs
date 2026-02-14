@@ -5,17 +5,7 @@ use crate::space::SpatialIndex;
 
 mod space;
 
-pub struct Settings {
-  pub delta_time:       f32,
-  pub smoothing_length: f32,
-  pub rest_density:     f32,
-  pub iterations:       u32,
-  pub constraint:       f32,
-  pub viscosity:        f32,
-}
-
 pub struct Simulation {
-  settings:  Settings,
   size:      Vector2<f32>,
   particles: Vec<Particle>,
   index:     SpatialIndex,
@@ -32,6 +22,7 @@ pub struct Particle {
 }
 
 const GRAVITY: Vector2<f32> = vector![0.0, -9.8];
+const DELTA_TIME: f32 = 0.01;
 const REST_DENSITY: f32 = 1000.0; // kg/m^2
 const PARTICLE_SPACING: f32 = 0.5; // particles/m
 const PARTICLE_MASS: f32 = 250.0; // kg
@@ -40,15 +31,11 @@ const ITERATIONS: u32 = 5;
 const SCORR_K: f32 = 0.001;
 const SCORR_N: i32 = 4;
 const SCORR_Q: f32 = 0.3;
+const CONSTRAINT: f32 = 0.4;
 
 impl Simulation {
-  pub fn new(size: Vector2<f32>, settings: Settings) -> Simulation {
-    Simulation {
-      settings,
-      size,
-      particles: vec![],
-      index: SpatialIndex::new(size, 2.0 * PARTICLE_SPACING),
-    }
+  pub fn new(size: Vector2<f32>) -> Simulation {
+    Simulation { size, particles: vec![], index: SpatialIndex::new(size, 2.0 * PARTICLE_SPACING) }
   }
 
   pub fn add_particle(&mut self, pos: Point2<f32>) {
@@ -72,29 +59,29 @@ impl Simulation {
 
       let direction = delta / distance;
       let falloff = 1.0 - distance / radius;
-      particle.velocity += direction * (strength * falloff * self.settings.delta_time);
+      particle.velocity += direction * (strength * falloff * DELTA_TIME);
     }
   }
 
   pub fn tick(&mut self) {
     for (id, particle) in self.particles.iter_mut().enumerate() {
-      particle.velocity += GRAVITY * self.settings.delta_time;
-      particle.predicted = particle.position + particle.velocity * self.settings.delta_time;
+      particle.velocity += GRAVITY * DELTA_TIME;
+      particle.predicted = particle.position + particle.velocity * DELTA_TIME;
 
       if particle.predicted.x < 0.0 {
         particle.predicted.x = 0.0;
-        particle.velocity.x *= -self.settings.constraint;
+        particle.velocity.x *= -CONSTRAINT;
       } else if particle.predicted.x > self.size.x {
         particle.predicted.x = self.size.x;
-        particle.velocity.x *= -self.settings.constraint;
+        particle.velocity.x *= -CONSTRAINT;
       }
 
       if particle.predicted.y < 0.0 {
         particle.predicted.y = 0.0;
-        particle.velocity.y *= -self.settings.constraint;
+        particle.velocity.y *= -CONSTRAINT;
       } else if particle.predicted.y > self.size.y {
         particle.predicted.y = self.size.y;
-        particle.velocity.y *= -self.settings.constraint;
+        particle.velocity.y *= -CONSTRAINT;
       }
 
       self.index.move_particle(id as u32, particle.predicted);
@@ -168,7 +155,7 @@ impl Simulation {
     }
 
     for particle in self.particles.iter_mut() {
-      particle.velocity = (particle.predicted - particle.position) / self.settings.delta_time;
+      particle.velocity = (particle.predicted - particle.position) / DELTA_TIME;
       particle.position = particle.predicted;
     }
   }

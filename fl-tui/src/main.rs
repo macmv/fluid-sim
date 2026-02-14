@@ -24,17 +24,7 @@ fn main() {
   const WIDTH: usize = 50;
   const HEIGHT: usize = 20;
 
-  let mut simulation = Simulation::new(
-    vector![WIDTH as f32, HEIGHT as f32],
-    fl_sim::Settings {
-      delta_time:       0.01,
-      smoothing_length: 1.0,
-      rest_density:     1.0,
-      iterations:       10,
-      constraint:       0.0,
-      viscosity:        1.0,
-    },
-  );
+  let mut simulation = Simulation::new(vector![WIDTH as f32, HEIGHT as f32]);
 
   for y in 20..40 {
     for x in 20..80 {

@@ -1,6 +1,6 @@
 use eframe::egui;
 use egui_plot::{Plot, PlotBounds, PlotPoints, Points};
-use fl_sim::{Settings, Simulation};
+use fl_sim::Simulation;
 use nalgebra::{point, vector};
 
 const WORLD_WIDTH: f32 = 40.0;
@@ -14,17 +14,7 @@ struct App {
 }
 
 fn make_simulation() -> Simulation {
-  let mut simulation = Simulation::new(
-    vector![WORLD_WIDTH, WORLD_HEIGHT],
-    Settings {
-      delta_time:       0.01,
-      smoothing_length: 1.0,
-      rest_density:     1000.0,
-      iterations:       10,
-      constraint:       0.4,
-      viscosity:        0.0,
-    },
-  );
+  let mut simulation = Simulation::new(vector![WORLD_WIDTH, WORLD_HEIGHT]);
 
   for y in 5..35 {
     for x in 20..50 {
