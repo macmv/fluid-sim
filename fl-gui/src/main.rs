@@ -3,8 +3,8 @@ use egui_plot::{Plot, PlotBounds, PlotPoints, Points};
 use fl_sim::{Settings, Simulation};
 use nalgebra::{point, vector};
 
-const WORLD_WIDTH: f32 = 50.0;
-const WORLD_HEIGHT: f32 = 30.0;
+const WORLD_WIDTH: f32 = 40.0;
+const WORLD_HEIGHT: f32 = 20.0;
 
 struct App {
   simulation: Simulation,
@@ -24,8 +24,8 @@ fn make_simulation() -> Simulation {
     },
   );
 
-  for y in 20..40 {
-    for x in 20..80 {
+  for y in 5..35 {
+    for x in 20..50 {
       simulation.add_particle(point![x as f32 / 2.0, y as f32 / 2.0]);
     }
   }
