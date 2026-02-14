@@ -128,7 +128,7 @@ impl Simulation {
         }
 
         gradient_sum_squared += gradient_sum.norm_squared();
-        let density_constraint = (estimated_density / REST_DENSITY - 1.0).max(-0.05);
+        let density_constraint = (estimated_density / REST_DENSITY - 1.0).max(-0.005);
 
         self.particles[id].density = estimated_density;
         self.particles[id].density_lambda =
