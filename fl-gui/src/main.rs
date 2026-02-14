@@ -1,0 +1,95 @@
+use eframe::egui;
+use egui_plot::{Plot, PlotBounds, PlotPoints, Points};
+use fl_sim::{Settings, Simulation};
+use nalgebra::{point, vector};
+
+const WORLD_WIDTH: f32 = 50.0;
+const WORLD_HEIGHT: f32 = 30.0;
+
+struct App {
+  simulation: Simulation,
+  paused:     bool,
+}
+
+impl App {
+  fn new() -> Self {
+    let mut simulation = Simulation::new(
+      vector![WORLD_WIDTH, WORLD_HEIGHT],
+      Settings {
+        delta_time:       0.01,
+        smoothing_length: 1.0,
+        rest_density:     1000.0,
+        iterations:       10,
+        constraint:       0.0,
+        viscosity:        1.0,
+      },
+    );
+
+    for y in 20..40 {
+      for x in 20..80 {
+        simulation.add_particle(point![x as f32 / 2.0, y as f32 / 2.0]);
+      }
+    }
+
+    Self { simulation, paused: false }
+  }
+}
+
+impl eframe::App for App {
+  fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    let mut single_step = false;
+    ctx.input(|input| {
+      if input.key_pressed(egui::Key::Space) {
+        self.paused = !self.paused;
+      }
+      if input.key_pressed(egui::Key::S) {
+        single_step = true;
+      }
+    });
+
+    if !self.paused || single_step {
+      self.simulation.tick();
+    }
+
+    egui::TopBottomPanel::top("controls").show(ctx, |ui| {
+      ui.horizontal(|ui| {
+        let state = if self.paused { "Paused" } else { "Running" };
+        ui.label(format!("State: {state}"));
+        ui.label("Space: Play/Pause");
+        ui.label("S: Single Step");
+      });
+    });
+
+    egui::CentralPanel::default().show(ctx, |ui| {
+      let particles = PlotPoints::from_iter(
+        self.simulation.particles().map(|p| [p.position.x as f64, p.position.y as f64]),
+      );
+
+      let points = Points::new("particles", particles)
+        .radius(2.0)
+        .color(egui::Color32::from_rgb(80, 180, 255));
+
+      Plot::new("fluid_particles")
+        .allow_boxed_zoom(false)
+        .allow_drag(false)
+        .allow_scroll(false)
+        .allow_zoom(false)
+        .show_axes([true, true])
+        .data_aspect(1.0)
+        .show(ui, |plot_ui| {
+          plot_ui.set_plot_bounds(PlotBounds::from_min_max(
+            [0.0, 0.0],
+            [WORLD_WIDTH as f64, WORLD_HEIGHT as f64],
+          ));
+          plot_ui.points(points);
+        });
+    });
+
+    ctx.request_repaint();
+  }
+}
+
+fn main() -> eframe::Result<()> {
+  let options = eframe::NativeOptions::default();
+  eframe::run_native("fl-gui", options, Box::new(|_cc| Ok(Box::new(App::new()))))
+}
