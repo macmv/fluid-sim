@@ -5,6 +5,8 @@ use nalgebra::{point, vector};
 
 const WORLD_WIDTH: f32 = 40.0;
 const WORLD_HEIGHT: f32 = 20.0;
+const MOUSE_FORCE_RADIUS: f32 = 2.0;
+const MOUSE_FORCE_STRENGTH: f32 = 500.0;
 
 struct App {
   simulation: Simulation,
@@ -52,9 +54,7 @@ impl eframe::App for App {
       }
     });
 
-    if !self.paused || single_step {
-      self.simulation.tick();
-    }
+    let mut do_tick = !self.paused || single_step;
 
     egui::TopBottomPanel::top("controls").show(ctx, |ui| {
       ui.horizontal(|ui| {
@@ -64,13 +64,16 @@ impl eframe::App for App {
           self.paused = !self.paused;
         }
         if ui.button("Single [s]").clicked() {
-          single_step = true;
+          do_tick = true;
         }
         if ui.button("Restart [r]").clicked() {
           self.simulation = make_simulation();
         }
       });
     });
+
+    let pointer_down = ctx.input(|input| input.pointer.primary_down());
+    let mut repel_center: Option<(f32, f32)> = None;
 
     egui::CentralPanel::default().show(ctx, |ui| {
       let particles = PlotPoints::from_iter(
@@ -94,8 +97,22 @@ impl eframe::App for App {
             [WORLD_WIDTH as f64, WORLD_HEIGHT as f64],
           ));
           plot_ui.points(points);
+          if pointer_down {
+            if let Some(pointer) = plot_ui.pointer_coordinate() {
+              repel_center = Some((pointer.x as f32, pointer.y as f32));
+            }
+          }
         });
     });
+
+    if let Some((x, y)) = repel_center {
+      self.simulation.apply_repulsion(point![x, y], MOUSE_FORCE_RADIUS, MOUSE_FORCE_STRENGTH);
+      do_tick = true;
+    }
+
+    if do_tick {
+      self.simulation.tick();
+    }
 
     ctx.request_repaint();
   }

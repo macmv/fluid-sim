@@ -62,6 +62,20 @@ impl Simulation {
     });
   }
 
+  pub fn apply_repulsion(&mut self, center: Point2<f32>, radius: f32, strength: f32) {
+    for particle in self.particles.iter_mut() {
+      let delta = particle.position - center;
+      let distance = delta.norm();
+      if distance == 0.0 || distance >= radius {
+        continue;
+      }
+
+      let direction = delta / distance;
+      let falloff = 1.0 - distance / radius;
+      particle.velocity += direction * (strength * falloff * self.settings.delta_time);
+    }
+  }
+
   pub fn tick(&mut self) {
     for (id, particle) in self.particles.iter_mut().enumerate() {
       particle.velocity += GRAVITY * self.settings.delta_time;
