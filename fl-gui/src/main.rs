@@ -21,7 +21,7 @@ fn make_simulation() -> Simulation {
       smoothing_length: 1.0,
       rest_density:     1000.0,
       iterations:       10,
-      constraint:       0.0,
+      constraint:       0.4,
       viscosity:        0.0,
     },
   );
