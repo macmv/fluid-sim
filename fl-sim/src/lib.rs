@@ -14,10 +14,10 @@ pub struct Simulation {
 #[derive(Debug)]
 pub struct Particle {
   pub position: Point2<f32>,
-  pub velocity: Vector2<f32>,
   pub density:  f32,
 
   density_lambda: f32,
+  prev_position:  Point2<f32>,
   predicted:      Point2<f32>,
 }
 
@@ -27,7 +27,7 @@ const DELTA_TIME: f32 = 0.01;
 const PARTICLE_SPACING: f32 = 0.5;
 const PARTICLE_MASS: f32 = 0.25;
 const LAMBDA_EPSILON: f32 = 1e-6;
-const ITERATIONS: u32 = 20;
+const ITERATIONS: u32 = 5;
 const SCORR_K: f32 = 0.001;
 const SCORR_N: i32 = 4;
 const SCORR_Q: f32 = 0.3;
@@ -43,10 +43,10 @@ impl Simulation {
   pub fn add_particle(&mut self, pos: Point2<f32>) {
     self.particles.push(Particle {
       position: pos,
-      velocity: vector![0.0, 0.0],
       density:  0.0,
 
       density_lambda: 0.0,
+      prev_position:  pos,
       predicted:      point![0.0, 0.0],
     });
   }
@@ -61,29 +61,28 @@ impl Simulation {
 
       let direction = delta / distance;
       let falloff = 1.0 - distance / radius;
-      particle.velocity += direction * (strength * falloff * DELTA_TIME);
+      let delta = direction * (strength * falloff * DELTA_TIME);
+      particle.prev_position -= delta * DELTA_TIME;
     }
   }
 
   pub fn tick(&mut self) {
     for (id, particle) in self.particles.iter_mut().enumerate() {
-      particle.velocity += GRAVITY * DELTA_TIME;
-      particle.predicted = particle.position + particle.velocity * DELTA_TIME;
+      // Position Verlet: x_{t+dt} = x_t + (x_t - x_{t-dt}) + a*dt^2
+      particle.predicted = particle.position
+        + (particle.position - particle.prev_position)
+        + GRAVITY * DELTA_TIME * DELTA_TIME;
 
       if particle.predicted.x < 0.0 {
         particle.predicted.x = 0.0;
-        particle.velocity.x *= -CONSTRAINT;
       } else if particle.predicted.x > self.size.x {
         particle.predicted.x = self.size.x;
-        particle.velocity.x *= -CONSTRAINT;
       }
 
       if particle.predicted.y < 0.0 {
         particle.predicted.y = 0.0;
-        particle.velocity.y *= -CONSTRAINT;
       } else if particle.predicted.y > self.size.y {
         particle.predicted.y = self.size.y;
-        particle.velocity.y *= -CONSTRAINT;
       }
 
       self.index.move_particle(id as u32, particle.predicted);
@@ -166,12 +165,23 @@ impl Simulation {
     }
 
     for particle in self.particles.iter_mut() {
-      particle.velocity = (particle.predicted - particle.position) / DELTA_TIME;
+      let mut velocity = (particle.predicted - particle.position) / DELTA_TIME;
+      if particle.predicted.x <= 0.0 && velocity.x < 0.0 {
+        velocity.x *= -CONSTRAINT;
+      } else if particle.predicted.x >= self.size.x && velocity.x > 0.0 {
+        velocity.x *= -CONSTRAINT;
+      }
+      if particle.predicted.y <= 0.0 && velocity.y < 0.0 {
+        velocity.y *= -CONSTRAINT;
+      } else if particle.predicted.y >= self.size.y && velocity.y > 0.0 {
+        velocity.y *= -CONSTRAINT;
+      }
 
       // TODO: Maybe remove if the reynolds number isn't really doing much
       let viscous_decay = (1.0 - (1.0 / REYNOLDS_NUMBER) * DELTA_TIME).clamp(0.0, 1.0);
-      particle.velocity *= viscous_decay;
+      velocity *= viscous_decay;
 
+      particle.prev_position = particle.predicted - velocity * DELTA_TIME;
       particle.position = particle.predicted;
     }
   }
