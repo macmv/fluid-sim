@@ -11,28 +11,30 @@ struct App {
   paused:     bool,
 }
 
-impl App {
-  fn new() -> Self {
-    let mut simulation = Simulation::new(
-      vector![WORLD_WIDTH, WORLD_HEIGHT],
-      Settings {
-        delta_time:       0.01,
-        smoothing_length: 1.0,
-        rest_density:     1000.0,
-        iterations:       10,
-        constraint:       0.0,
-        viscosity:        1.0,
-      },
-    );
+fn make_simulation() -> Simulation {
+  let mut simulation = Simulation::new(
+    vector![WORLD_WIDTH, WORLD_HEIGHT],
+    Settings {
+      delta_time:       0.01,
+      smoothing_length: 1.0,
+      rest_density:     1000.0,
+      iterations:       10,
+      constraint:       0.0,
+      viscosity:        0.0,
+    },
+  );
 
-    for y in 20..40 {
-      for x in 20..80 {
-        simulation.add_particle(point![x as f32 / 2.0, y as f32 / 2.0]);
-      }
+  for y in 20..40 {
+    for x in 20..80 {
+      simulation.add_particle(point![x as f32 / 2.0, y as f32 / 2.0]);
     }
-
-    Self { simulation, paused: false }
   }
+
+  simulation
+}
+
+impl App {
+  fn new() -> Self { Self { simulation: make_simulation(), paused: false } }
 }
 
 impl eframe::App for App {
@@ -45,6 +47,9 @@ impl eframe::App for App {
       if input.key_pressed(egui::Key::S) {
         single_step = true;
       }
+      if input.key_pressed(egui::Key::R) {
+        self.simulation = make_simulation();
+      }
     });
 
     if !self.paused || single_step {
@@ -55,8 +60,15 @@ impl eframe::App for App {
       ui.horizontal(|ui| {
         let state = if self.paused { "Paused" } else { "Running" };
         ui.label(format!("State: {state}"));
-        ui.label("Space: Play/Pause");
-        ui.label("S: Single Step");
+        if ui.button("Play/Pause [space]").clicked() {
+          self.paused = !self.paused;
+        }
+        if ui.button("Single [s]").clicked() {
+          single_step = true;
+        }
+        if ui.button("Restart [r]").clicked() {
+          self.simulation = make_simulation();
+        }
       });
     });
 
