@@ -74,13 +74,7 @@ fn main() {
         let d = density[y][x];
         let (r, g, b) = density_to_rgb(d);
         if d >= 0.1 {
-          print!(
-            "\x1b[38;2;{r};{g};{b}m{}",
-            match () {
-              _ if d >= 2.0 => '#',
-              _ => '.',
-            }
-          );
+          print!("\x1b[38;2;{r};{g};{b}m#");
         } else {
           print!(" ");
         }
