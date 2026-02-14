@@ -43,6 +43,8 @@ fn main() {
   let mut density = vec![vec![0.0; 50]; 20];
   let mut counts = vec![vec![0u32; 50]; 20];
 
+  let mut next = std::time::Instant::now() + std::time::Duration::from_millis(10);
+
   loop {
     simulation.tick();
     for it in density.iter_mut().flatten() {
@@ -100,6 +102,12 @@ fn main() {
 
     first = false;
 
-    std::thread::sleep(std::time::Duration::from_millis(100));
+    let now = std::time::Instant::now();
+    if let Some(sleep) = next.checked_duration_since(now) {
+      std::thread::sleep(sleep);
+      next += std::time::Duration::from_millis(10);
+    } else {
+      next = now;
+    }
   }
 }
