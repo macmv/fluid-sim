@@ -6,7 +6,7 @@ use nalgebra::{point, vector};
 const WORLD_WIDTH: f32 = 40.0;
 const WORLD_HEIGHT: f32 = 20.0;
 const MOUSE_FORCE_RADIUS: f32 = 2.0;
-const MOUSE_FORCE_STRENGTH: f32 = 500.0;
+const MOUSE_FORCE_STRENGTH: f32 = 5000.0;
 
 struct App {
   simulation: Simulation,
