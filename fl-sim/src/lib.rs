@@ -9,6 +9,8 @@ pub struct Simulation {
   size:      Vector2<f32>,
   particles: Vec<Particle>,
   index:     SpatialIndex,
+
+  barriers: Vec<(Point2<f32>, Point2<f32>)>,
 }
 
 #[derive(Debug)]
@@ -37,7 +39,12 @@ const REYNOLDS_NUMBER: f32 = 200.0;
 
 impl Simulation {
   pub fn new(size: Vector2<f32>) -> Simulation {
-    Simulation { size, particles: vec![], index: SpatialIndex::new(size, 2.0 * PARTICLE_SPACING) }
+    Simulation {
+      size,
+      particles: vec![],
+      index: SpatialIndex::new(size, 2.0 * PARTICLE_SPACING),
+      barriers: vec![],
+    }
   }
 
   pub fn add_particle(&mut self, pos: Point2<f32>) {
@@ -50,6 +57,14 @@ impl Simulation {
       predicted:      point![0.0, 0.0],
     });
   }
+
+  pub fn add_barrier(&mut self, min: Point2<f32>, max: Point2<f32>) {
+    let lo = point![min.x.min(max.x), min.y.min(max.y)];
+    let hi = point![min.x.max(max.x), min.y.max(max.y)];
+    self.barriers.push((lo, hi));
+  }
+
+  pub fn clear_barriers(&mut self) { self.barriers.clear(); }
 
   pub fn apply_repulsion(&mut self, center: Point2<f32>, radius: f32, strength: f32) {
     for particle in self.particles.iter_mut() {
@@ -83,6 +98,10 @@ impl Simulation {
         particle.predicted.y = 0.0;
       } else if particle.predicted.y > self.size.y {
         particle.predicted.y = self.size.y;
+      }
+
+      for &(min, max) in &self.barriers {
+        project_out_of_barrier(&mut particle.predicted, min, max);
       }
 
       self.index.move_particle(id as u32, particle.predicted);
@@ -160,6 +179,9 @@ impl Simulation {
         self.particles[id].predicted += position_deltas[id];
         self.particles[id].predicted.x = self.particles[id].predicted.x.clamp(0.0, self.size.x);
         self.particles[id].predicted.y = self.particles[id].predicted.y.clamp(0.0, self.size.y);
+        for &(min, max) in &self.barriers {
+          project_out_of_barrier(&mut self.particles[id].predicted, min, max);
+        }
         self.index.move_particle(id as u32, self.particles[id].predicted);
       }
     }
@@ -175,6 +197,9 @@ impl Simulation {
         velocity.y *= -CONSTRAINT;
       } else if particle.predicted.y >= self.size.y && velocity.y > 0.0 {
         velocity.y *= -CONSTRAINT;
+      }
+      for &(min, max) in &self.barriers {
+        resolve_barrier_velocity(&particle.predicted, min, max, &mut velocity);
       }
 
       // TODO: Maybe remove if the reynolds number isn't really doing much
@@ -221,4 +246,47 @@ fn tensile_correction(distance: f32, radius: f32) -> f32 {
     return 0.0;
   }
   -SCORR_K * (numerator / denominator).powi(SCORR_N)
+}
+
+fn project_out_of_barrier(position: &mut Point2<f32>, min: Point2<f32>, max: Point2<f32>) {
+  if !(position.x > min.x && position.x < max.x && position.y > min.y && position.y < max.y) {
+    return;
+  }
+
+  let left = position.x - min.x;
+  let right = max.x - position.x;
+  let bottom = position.y - min.y;
+  let top = max.y - position.y;
+  let penetration = left.min(right).min(bottom).min(top);
+
+  if penetration == left {
+    position.x = min.x;
+  } else if penetration == right {
+    position.x = max.x;
+  } else if penetration == bottom {
+    position.y = min.y;
+  } else {
+    position.y = max.y;
+  }
+}
+
+fn resolve_barrier_velocity(
+  position: &Point2<f32>,
+  min: Point2<f32>,
+  max: Point2<f32>,
+  velocity: &mut Vector2<f32>,
+) {
+  const EPS: f32 = 1e-5;
+
+  if (position.x - min.x).abs() <= EPS && velocity.x > 0.0 {
+    velocity.x *= -CONSTRAINT;
+  } else if (position.x - max.x).abs() <= EPS && velocity.x < 0.0 {
+    velocity.x *= -CONSTRAINT;
+  }
+
+  if (position.y - min.y).abs() <= EPS && velocity.y > 0.0 {
+    velocity.y *= -CONSTRAINT;
+  } else if (position.y - max.y).abs() <= EPS && velocity.y < 0.0 {
+    velocity.y *= -CONSTRAINT;
+  }
 }

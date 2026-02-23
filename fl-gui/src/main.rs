@@ -22,6 +22,8 @@ fn make_simulation() -> Simulation {
     }
   }
 
+  simulation.add_barrier(point![10.0, 1.0], point![20.0, 10.0]);
+
   simulation
 }
 
