@@ -1,19 +1,19 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use nalgebra::{Point2, Vector2, vector};
 
-pub struct SpatialIndex {
+pub struct SpatialIndex<const N: usize> {
   radius:        f32,
   size:          Vector2<u32>,
   cells:         Vec<HashSet<ParticleId>>,
-  reverse_cells: HashMap<ParticleId, u32>,
+  reverse_cells: [u32; N], // index is particle id
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 struct ParticleId(u32);
 
-impl SpatialIndex {
-  pub fn new(world_size: Vector2<f32>, radius: f32) -> SpatialIndex {
+impl<const N: usize> SpatialIndex<N> {
+  pub fn new(world_size: Vector2<f32>, radius: f32) -> Self {
     let size =
       vector![(world_size.x / radius).ceil() as u32, (world_size.y / radius).ceil() as u32];
 
@@ -21,7 +21,7 @@ impl SpatialIndex {
       radius,
       size,
       cells: vec![HashSet::new(); (size.x * size.y) as usize],
-      reverse_cells: HashMap::new(),
+      reverse_cells: [0; N],
     }
   }
 
@@ -43,10 +43,9 @@ impl SpatialIndex {
 
   pub fn move_particle(&mut self, id: u32, position: Point2<f32>) {
     if let Some(new_cell) = self.pos_to_cell(position) {
-      let prev_cell = self.reverse_cells.get(&ParticleId(id)).copied();
+      let prev_cell = self.reverse_cells.get(id as usize).copied();
       if prev_cell != Some(new_cell) {
-        self.reverse_cells.remove(&ParticleId(id));
-        self.reverse_cells.insert(ParticleId(id), new_cell);
+        self.reverse_cells[id as usize] = new_cell;
 
         if let Some(prev) = prev_cell {
           self.cells[prev as usize].remove(&ParticleId(id));
@@ -57,7 +56,7 @@ impl SpatialIndex {
   }
 
   pub fn neighbors(&self, id: u32) -> impl Iterator<Item = u32> {
-    let iter = self.reverse_cells.get(&ParticleId(id)).copied().map(|cell| {
+    let iter = self.reverse_cells.get(id as usize).copied().map(|cell| {
       let x = cell % self.size.x;
       let y = cell / self.size.x;
 
@@ -84,7 +83,7 @@ mod tests {
 
   #[test]
   fn it_works() {
-    let mut index = SpatialIndex::new(vector![10.0, 10.0], 1.0);
+    let mut index = SpatialIndex::<1>::new(vector![10.0, 10.0], 1.0);
     index.move_particle(0, point![0.5, 0.5]);
 
     assert_eq!(index.cells[0].len(), 1);

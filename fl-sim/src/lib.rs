@@ -8,7 +8,7 @@ mod space;
 pub struct Simulation<const N: usize> {
   size:      Vector2<f32>,
   particles: [Particle; N],
-  index:     SpatialIndex,
+  index:     SpatialIndex<N>,
 
   barriers: Vec<(Point2<f32>, Point2<f32>)>,
 }
