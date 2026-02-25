@@ -8,17 +8,21 @@ const WORLD_HEIGHT: f32 = 20.0;
 const MOUSE_FORCE_RADIUS: f32 = 2.0;
 const MOUSE_FORCE_STRENGTH: f32 = 5000.0;
 
+const PARTICLES: usize = 30 * 30;
+
 struct App {
-  simulation: Simulation,
+  simulation: Simulation<PARTICLES>,
   paused:     bool,
 }
 
-fn make_simulation() -> Simulation {
+fn make_simulation() -> Simulation<PARTICLES> {
   let mut simulation = Simulation::new(vector![WORLD_WIDTH, WORLD_HEIGHT]);
 
+  let mut i = 0;
   for y in 5..35 {
     for x in 20..50 {
-      simulation.add_particle(point![x as f32 / 2.0, y as f32 / 2.0]);
+      simulation.set_particle(i, point![x as f32 / 2.0, y as f32 / 2.0]);
+      i += 1;
     }
   }
 

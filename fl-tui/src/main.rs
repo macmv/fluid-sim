@@ -24,11 +24,13 @@ fn main() {
   const WIDTH: usize = 50;
   const HEIGHT: usize = 20;
 
-  let mut simulation = Simulation::new(vector![WIDTH as f32, HEIGHT as f32]);
+  let mut simulation = Simulation::<{ 20 * 60 }>::new(vector![WIDTH as f32, HEIGHT as f32]);
 
+  let mut i = 0;
   for y in 20..40 {
     for x in 20..80 {
-      simulation.add_particle(point![x as f32 / 2.0, y as f32 / 2.0]);
+      simulation.set_particle(i, point![x as f32 / 2.0, y as f32 / 2.0]);
+      i += 1;
     }
   }
 

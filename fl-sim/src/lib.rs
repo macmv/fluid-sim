@@ -5,15 +5,15 @@ use crate::space::SpatialIndex;
 
 mod space;
 
-pub struct Simulation {
+pub struct Simulation<const N: usize> {
   size:      Vector2<f32>,
-  particles: Vec<Particle>,
+  particles: [Particle; N],
   index:     SpatialIndex,
 
   barriers: Vec<(Point2<f32>, Point2<f32>)>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Particle {
   pub position: Point2<f32>,
   pub density:  f32,
@@ -37,25 +37,31 @@ const CONSTRAINT: f32 = 0.4;
 const FROUDE_NUMBER: f32 = 0.01;
 const REYNOLDS_NUMBER: f32 = 200.0;
 
-impl Simulation {
-  pub fn new(size: Vector2<f32>) -> Simulation {
+impl<const N: usize> Simulation<N> {
+  pub fn new(size: Vector2<f32>) -> Self {
     Simulation {
       size,
-      particles: vec![],
+      particles: [Particle {
+        position:       point![0.0, 0.0],
+        density:        0.0,
+        density_lambda: 0.0,
+        prev_position:  point![0.0, 0.0],
+        predicted:      point![0.0, 0.0],
+      }; N],
       index: SpatialIndex::new(size, 2.0 * PARTICLE_SPACING),
       barriers: vec![],
     }
   }
 
-  pub fn add_particle(&mut self, pos: Point2<f32>) {
-    self.particles.push(Particle {
+  pub fn set_particle(&mut self, i: usize, pos: Point2<f32>) {
+    self.particles[i] = Particle {
       position: pos,
       density:  0.0,
 
       density_lambda: 0.0,
       prev_position:  pos,
       predicted:      point![0.0, 0.0],
-    });
+    };
   }
 
   pub fn add_barrier(&mut self, min: Point2<f32>, max: Point2<f32>) {
@@ -140,7 +146,7 @@ impl Simulation {
           -density_constraint / (gradient_sum_squared + LAMBDA_EPSILON);
       }
 
-      let mut position_deltas = vec![vector![0.0, 0.0]; self.particles.len()];
+      let mut position_deltas = [vector![0.0, 0.0]; N];
       for id in 0..self.particles.len() {
         let mut total_position_delta = vector![0.0, 0.0];
 
