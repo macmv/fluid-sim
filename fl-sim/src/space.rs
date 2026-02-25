@@ -1,12 +1,19 @@
-use std::collections::HashSet;
-
+use alloc::vec::Vec;
 use nalgebra::{Point2, Vector2, vector};
 
 pub struct SpatialIndex<const N: usize> {
   radius:        f32,
   size:          Vector2<u32>,
-  cells:         Vec<HashSet<ParticleId>>,
+  cells:         Vec<Set<ParticleId>>,
   reverse_cells: [u32; N], // index is particle id
+}
+
+#[derive(Clone)]
+struct Set<T> {
+  #[cfg(feature = "std")]
+  contents: std::collections::HashSet<T>,
+  #[cfg(not(feature = "std"))]
+  contents: Vec<T>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
@@ -20,7 +27,7 @@ impl<const N: usize> SpatialIndex<N> {
     SpatialIndex {
       radius,
       size,
-      cells: vec![HashSet::new(); (size.x * size.y) as usize],
+      cells: vec![Set::new(); (size.x * size.y) as usize],
       reverse_cells: [0; N],
     }
   }
@@ -48,7 +55,7 @@ impl<const N: usize> SpatialIndex<N> {
         self.reverse_cells[id as usize] = new_cell;
 
         if let Some(prev) = prev_cell {
-          self.cells[prev as usize].remove(&ParticleId(id));
+          self.cells[prev as usize].remove(ParticleId(id));
         }
         self.cells[new_cell as usize].insert(ParticleId(id));
       }
@@ -72,6 +79,38 @@ impl<const N: usize> SpatialIndex<N> {
     });
 
     iter.into_iter().flatten()
+  }
+}
+
+impl<T> Set<T> {
+  pub fn new() -> Self {
+    Set {
+      #[cfg(feature = "std")]
+      contents:                              std::collections::HashSet::new(),
+      #[cfg(not(feature = "std"))]
+      contents:                              Vec::new(),
+    }
+  }
+
+  pub fn iter(&self) -> impl Iterator<Item = &T> { self.contents.iter() }
+}
+
+impl<T: Eq + core::hash::Hash> Set<T> {
+  pub fn insert(&mut self, value: T) {
+    #[cfg(feature = "std")]
+    self.contents.insert(value);
+    #[cfg(not(feature = "std"))]
+    self.contents.push(value);
+  }
+
+  pub fn remove(&mut self, value: T) {
+    #[cfg(feature = "std")]
+    self.contents.remove(&value);
+    #[cfg(not(feature = "std"))]
+    {
+      let idx = self.content.index_of(value);
+      self.contents.swap_remove(idx);
+    }
   }
 }
 

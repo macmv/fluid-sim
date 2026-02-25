@@ -1,9 +1,14 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
+use alloc::vec::Vec;
+use core::f32::consts::PI;
 use nalgebra::{Point2, Vector2, point, vector};
-use std::f32::consts::PI;
 
 use crate::space::SpatialIndex;
 
 mod space;
+
+extern crate alloc;
 
 pub struct Simulation<const N: usize> {
   size:      Vector2<f32>,
@@ -49,7 +54,7 @@ impl<const N: usize> Simulation<N> {
         predicted:      point![0.0, 0.0],
       }; N],
       index: SpatialIndex::new(size, 2.0 * PARTICLE_SPACING),
-      barriers: vec![],
+      barriers: Vec::new(),
     }
   }
 
