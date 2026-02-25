@@ -125,11 +125,11 @@ mod tests {
     let mut index = SpatialIndex::<1>::new(vector![10.0, 10.0], 1.0);
     index.move_particle(0, point![0.5, 0.5]);
 
-    assert_eq!(index.cells[0].len(), 1);
+    assert_eq!(index.cells[0].contents.len(), 1);
 
     index.move_particle(0, point![1.5, 0.5]);
 
-    assert_eq!(index.cells[0].len(), 0);
-    assert_eq!(index.cells[1].len(), 1);
+    assert_eq!(index.cells[0].contents.len(), 0);
+    assert_eq!(index.cells[1].contents.len(), 1);
   }
 }
