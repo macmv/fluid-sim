@@ -108,8 +108,9 @@ impl<T: Eq + core::hash::Hash> Set<T> {
     self.contents.remove(&value);
     #[cfg(not(feature = "std"))]
     {
-      let idx = self.content.index_of(value);
-      self.contents.swap_remove(idx);
+      if let Some(idx) = self.contents.iter().position(|v| *v == value) {
+        self.contents.swap_remove(idx);
+      }
     }
   }
 }
