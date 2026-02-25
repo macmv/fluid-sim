@@ -22,12 +22,12 @@ struct ParticleId(u32);
 impl<const N: usize> SpatialIndex<N> {
   pub fn new(world_size: Vector2<f32>, radius: f32) -> Self {
     let size =
-      vector![(world_size.x / radius).ceil() as u32, (world_size.y / radius).ceil() as u32];
+      vector![libm::ceilf(world_size.x / radius) as u32, libm::ceilf(world_size.y / radius) as u32];
 
     SpatialIndex {
       radius,
       size,
-      cells: vec![Set::new(); (size.x * size.y) as usize],
+      cells: alloc::vec![Set::new(); (size.x * size.y) as usize],
       reverse_cells: [0; N],
     }
   }

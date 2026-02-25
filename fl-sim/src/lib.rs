@@ -225,6 +225,16 @@ impl<const N: usize> Simulation<N> {
   pub fn particles(&self) -> impl Iterator<Item = &Particle> { self.particles.iter() }
 }
 
+#[cfg(not(feature = "std"))]
+trait PowI {
+  fn powi(&self, pow: i32) -> Self;
+}
+
+#[cfg(not(feature = "std"))]
+impl PowI for f32 {
+  fn powi(&self, pow: i32) -> Self { libm::powf(*self, pow as f32) }
+}
+
 fn kernel_poly6(distance: f32, radius: f32) -> f32 {
   const NUMERATOR_2D: f32 = 4.0;
   const FACTOR_2D: f32 = 1.0;
