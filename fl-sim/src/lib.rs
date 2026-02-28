@@ -15,7 +15,7 @@ pub extern crate nalgebra;
 pub struct Simulation<const N: usize> {
   size:      Vector2<f32>,
   particles: [Particle; N],
-  index:     SpatialIndex<N>,
+  pub index: SpatialIndex<N>,
 
   barriers: Vec<(Point2<f32>, Point2<f32>)>,
 }
@@ -31,12 +31,12 @@ pub struct Particle {
 }
 
 const GRAVITY: Vector2<f32> = vector![0.0 / FROUDE_NUMBER, -1.0 / FROUDE_NUMBER];
-const REST_DENSITY: f32 = 1.0;
+const REST_DENSITY: f32 = 2.0;
 const DELTA_TIME: f32 = 0.01;
 const PARTICLE_SPACING: f32 = 0.5;
 const PARTICLE_MASS: f32 = 0.25;
 const LAMBDA_EPSILON: f32 = 1e-6;
-const ITERATIONS: u32 = 5;
+const ITERATIONS: u32 = 50;
 const SCORR_K: f32 = 0.001;
 const SCORR_N: i32 = 4;
 const SCORR_Q: f32 = 0.3;
@@ -55,7 +55,7 @@ impl<const N: usize> Simulation<N> {
         prev_position:  point![0.0, 0.0],
         predicted:      point![0.0, 0.0],
       }; N],
-      index: SpatialIndex::new(size, 2.0 * PARTICLE_SPACING),
+      index: SpatialIndex::new(size, 1.5 * PARTICLE_SPACING),
       barriers: Vec::new(),
     }
   }
@@ -117,7 +117,7 @@ impl<const N: usize> Simulation<N> {
         project_out_of_barrier(&mut particle.predicted, min, max);
       }
 
-      self.index.move_particle(id as u32, particle.predicted);
+      self.index.move_particle(id as u8, particle.predicted);
     }
 
     for _ in 0..ITERATIONS {
@@ -165,7 +165,7 @@ impl<const N: usize> Simulation<N> {
 
           // Two particles next to each other => bad news bears
           if distance == 0.0 {
-            if (id as u32) < neighbor {
+            if (id as u8) < neighbor {
               total_position_delta +=
                 (p.density_lambda + n.density_lambda) * PARTICLE_MASS * vector![1.0, 0.0];
             }
@@ -195,7 +195,7 @@ impl<const N: usize> Simulation<N> {
         for &(min, max) in &self.barriers {
           project_out_of_barrier(&mut self.particles[id].predicted, min, max);
         }
-        self.index.move_particle(id as u32, self.particles[id].predicted);
+        self.index.move_particle(id as u8, self.particles[id].predicted);
       }
     }
 

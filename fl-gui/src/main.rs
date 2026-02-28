@@ -3,12 +3,12 @@ use egui_plot::{Plot, PlotBounds, PlotPoints, Points};
 use fl_sim::Simulation;
 use nalgebra::{point, vector};
 
-const WORLD_WIDTH: f32 = 40.0;
-const WORLD_HEIGHT: f32 = 20.0;
+const WORLD_WIDTH: f32 = 8.0;
+const WORLD_HEIGHT: f32 = 8.0;
 const MOUSE_FORCE_RADIUS: f32 = 2.0;
 const MOUSE_FORCE_STRENGTH: f32 = 5000.0;
 
-const PARTICLES: usize = 30 * 30;
+const PARTICLES: usize = 256;
 
 struct App {
   simulation: Simulation<PARTICLES>,
@@ -19,14 +19,14 @@ fn make_simulation() -> Simulation<PARTICLES> {
   let mut simulation = Simulation::new(vector![WORLD_WIDTH, WORLD_HEIGHT]);
 
   let mut i = 0;
-  for y in 5..35 {
-    for x in 20..50 {
-      simulation.set_particle(i, point![x as f32 / 2.0, y as f32 / 2.0]);
+  for y in 4..4 + 16 {
+    for x in 4..4 + 16 {
+      simulation.set_particle(i, point![x as f32 / 4.0, y as f32 / 4.0]);
       i += 1;
     }
   }
 
-  simulation.add_barrier(point![10.0, 1.0], point![20.0, 10.0]);
+  simulation.add_barrier(point![4.0, 1.0], point![5.0, 2.0]);
 
   simulation
 }

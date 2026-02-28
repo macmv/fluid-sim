@@ -3,9 +3,9 @@ use nalgebra::{Point2, Vector2, vector};
 
 pub struct SpatialIndex<const N: usize> {
   radius:        f32,
-  size:          Vector2<u32>,
+  size:          Vector2<u8>,
   cells:         Vec<Set<ParticleId>>,
-  reverse_cells: [u32; N], // index is particle id
+  reverse_cells: [u8; N], // index is particle id
 }
 
 #[derive(Clone)]
@@ -17,30 +17,37 @@ struct Set<T> {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
-struct ParticleId(u32);
+struct ParticleId(u8);
 
 impl<const N: usize> SpatialIndex<N> {
   pub fn new(world_size: Vector2<f32>, radius: f32) -> Self {
     let size =
-      vector![libm::ceilf(world_size.x / radius) as u32, libm::ceilf(world_size.y / radius) as u32];
+      vector![libm::ceilf(world_size.x / radius) as u8, libm::ceilf(world_size.y / radius) as u8];
+
+    if size.x as u32 * size.y as u32 > u8::MAX as u32 + 1 {
+      panic!("size is too large: {size:?}");
+    }
 
     SpatialIndex {
       radius,
       size,
-      cells: alloc::vec![Set::new(); (size.x * size.y) as usize],
+      cells: alloc::vec![Set::new(); size.x as usize * size.y as usize],
       reverse_cells: [0; N],
     }
   }
 
   pub fn radius(&self) -> f32 { self.radius }
+  pub fn width(&self) -> u8 { self.size.x }
+  pub fn height(&self) -> u8 { self.size.y }
+  pub fn cell_count(&self) -> usize { self.cells.len() }
 
-  fn pos_to_cell(&self, pos: Point2<f32>) -> Option<u32> {
+  fn pos_to_cell(&self, pos: Point2<f32>) -> Option<u8> {
     if pos.x < 0.0 || pos.y < 0.0 {
       return None;
     }
 
-    let x = (pos.x / self.radius) as u32;
-    let y = (pos.y / self.radius) as u32;
+    let x = (pos.x / self.radius) as u8;
+    let y = (pos.y / self.radius) as u8;
     if x >= self.size.x || y >= self.size.y {
       return None;
     }
@@ -48,7 +55,7 @@ impl<const N: usize> SpatialIndex<N> {
     Some(x + self.size.x * y)
   }
 
-  pub fn move_particle(&mut self, id: u32, position: Point2<f32>) {
+  pub fn move_particle(&mut self, id: u8, position: Point2<f32>) {
     if let Some(new_cell) = self.pos_to_cell(position) {
       let prev_cell = self.reverse_cells.get(id as usize).copied();
       if prev_cell != Some(new_cell) {
@@ -62,7 +69,7 @@ impl<const N: usize> SpatialIndex<N> {
     }
   }
 
-  pub fn neighbors(&self, id: u32) -> impl Iterator<Item = u32> {
+  pub fn neighbors(&self, id: u32) -> impl Iterator<Item = u8> {
     let iter = self.reverse_cells.get(id as usize).copied().map(|cell| {
       let x = cell % self.size.x;
       let y = cell / self.size.x;
