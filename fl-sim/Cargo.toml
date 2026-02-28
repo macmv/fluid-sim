@@ -10,3 +10,10 @@ nalgebra = { version = "0.34.1", default-features = false, features = ["macros",
 [features]
 default = []
 std = ["nalgebra/std"]
+
+[dev-dependencies]
+criterion = { version = "0.8.2", features = ["html_reports"] }
+
+[[bench]]
+name = "square"
+harness = false
