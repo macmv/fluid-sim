@@ -31,12 +31,12 @@ pub struct Particle {
 }
 
 const GRAVITY: Vector2<f32> = vector![0.0 / FROUDE_NUMBER, -1.0 / FROUDE_NUMBER];
-const REST_DENSITY: f32 = 2.0;
+const REST_DENSITY: f32 = 1.0;
 const DELTA_TIME: f32 = 0.01;
 const PARTICLE_SPACING: f32 = 0.5;
 const PARTICLE_MASS: f32 = 0.25;
 const LAMBDA_EPSILON: f32 = 1e-6;
-const ITERATIONS: u32 = 50;
+const ITERATIONS: u32 = 2;
 const SCORR_K: f32 = 0.001;
 const SCORR_N: i32 = 4;
 const SCORR_Q: f32 = 0.3;
@@ -55,7 +55,7 @@ impl<const N: usize> Simulation<N> {
         prev_position:  point![0.0, 0.0],
         predicted:      point![0.0, 0.0],
       }; N],
-      index: SpatialIndex::new(size, 1.5 * PARTICLE_SPACING),
+      index: SpatialIndex::new(size, 2.0 * PARTICLE_SPACING),
       barriers: Vec::new(),
     }
   }
