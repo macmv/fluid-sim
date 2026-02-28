@@ -10,6 +10,8 @@ mod space;
 
 extern crate alloc;
 
+pub extern crate nalgebra;
+
 pub struct Simulation<const N: usize> {
   size:      Vector2<f32>,
   particles: [Particle; N],
