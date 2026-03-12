@@ -228,14 +228,20 @@ impl<const N: usize> Simulation<N> {
   pub fn particles(&self) -> impl Iterator<Item = &Particle> { self.particles.iter() }
 }
 
-#[cfg(not(feature = "std"))]
 trait PowI {
-  fn powi(&self, pow: i32) -> Self;
+  fn pow2(self) -> Self;
+  fn pow3(self) -> Self;
+  fn pow4(self) -> Self;
+  fn pow5(self) -> Self;
+  fn pow8(self) -> Self;
 }
 
-#[cfg(not(feature = "std"))]
 impl PowI for f32 {
-  fn powi(&self, pow: i32) -> Self { libm::powf(*self, pow as f32) }
+  fn pow2(self) -> Self { self * self }
+  fn pow3(self) -> Self { self * self * self }
+  fn pow4(self) -> Self { self * self * self * self }
+  fn pow5(self) -> Self { self * self * self * self * self }
+  fn pow8(self) -> Self { self * self * self * self * self * self * self * self }
 }
 
 fn kernel_poly6(distance: f32, radius: f32) -> f32 {
@@ -246,8 +252,8 @@ fn kernel_poly6(distance: f32, radius: f32) -> f32 {
     return 0.0;
   }
 
-  let coeff = NUMERATOR_2D / (FACTOR_2D * PI * radius.powi(8));
-  coeff * (radius.powi(2) - distance.powi(2)).powi(3)
+  let coeff = NUMERATOR_2D / (FACTOR_2D * PI * radius.pow8());
+  coeff * (radius.pow2() - distance.pow2()).pow3()
 }
 
 fn kernel_spiky_gradient(displacement: Vector2<f32>, radius: f32) -> Vector2<f32> {
@@ -259,8 +265,8 @@ fn kernel_spiky_gradient(displacement: Vector2<f32>, radius: f32) -> Vector2<f32
     return vector![0.0, 0.0];
   }
 
-  let coeff = NUMERATOR_2D / (FACTOR_2D * PI * radius.powi(5));
-  (displacement / distance) * (coeff * (radius - distance).powi(2))
+  let coeff = NUMERATOR_2D / (FACTOR_2D * PI * radius.pow5());
+  (displacement / distance) * (coeff * (radius - distance).pow2())
 }
 
 fn tensile_correction(distance: f32, radius: f32) -> f32 {
@@ -269,7 +275,8 @@ fn tensile_correction(distance: f32, radius: f32) -> f32 {
   if denominator <= 0.0 {
     return 0.0;
   }
-  -SCORR_K * (numerator / denominator).powi(SCORR_N)
+  const _: () = assert!(SCORR_N == 4);
+  -SCORR_K * (numerator / denominator).pow4() // powi(SCORR_N)
 }
 
 fn project_out_of_barrier(position: &mut Point2<f32>, min: Point2<f32>, max: Point2<f32>) {
