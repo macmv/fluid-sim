@@ -81,13 +81,15 @@ impl<const N: usize> Simulation<N> {
   pub fn clear_barriers(&mut self) { self.barriers.clear(); }
 
   pub fn apply_repulsion(&mut self, center: Point2<f32>, radius: f32, strength: f32) {
+    let radius_sq = radius * radius;
     for particle in self.particles.iter_mut() {
       let delta = particle.position - center;
-      let distance = delta.norm();
-      if distance == 0.0 || distance >= radius {
+      let distance_sq = delta.norm_squared();
+      if distance_sq == 0.0 || distance_sq >= radius_sq {
         continue;
       }
 
+      let distance = libm::sqrtf(distance_sq);
       let direction = delta / distance;
       let falloff = 1.0 - distance / radius;
       let delta = direction * (strength * falloff * DELTA_TIME);
@@ -121,6 +123,7 @@ impl<const N: usize> Simulation<N> {
       self.index.move_particle(id as u8, particle.predicted);
     }
 
+    let radius_sq = self.index.radius() * self.index.radius();
     for _ in 0..ITERATIONS {
       for id in 0..self.particles.len() {
         let mut estimated_density = 0.0;
@@ -131,17 +134,18 @@ impl<const N: usize> Simulation<N> {
           let p = &self.particles[id];
           let n = &self.particles[neighbor as usize];
           let delta = p.predicted - n.predicted;
-          let distance = delta.norm();
+          let distance_sq = delta.norm_squared();
 
-          if distance >= self.index.radius() {
+          if distance_sq >= radius_sq {
             continue;
           }
 
+          let distance = libm::sqrtf(distance_sq);
           let weight = kernel_poly6(distance, self.index.radius());
           estimated_density += PARTICLE_MASS * weight;
 
-          let gradient =
-            kernel_spiky_gradient(delta, self.index.radius()) * (PARTICLE_MASS / REST_DENSITY);
+          let gradient = kernel_spiky_gradient(delta, distance, self.index.radius())
+            * (PARTICLE_MASS / REST_DENSITY);
           gradient_sum += gradient;
           gradient_sum_squared += gradient.norm_squared();
         }
@@ -162,10 +166,10 @@ impl<const N: usize> Simulation<N> {
           let p = &self.particles[id];
           let n = &self.particles[neighbor as usize];
           let delta = p.predicted - n.predicted;
-          let distance = delta.norm();
+          let distance_sq = delta.norm_squared();
 
           // Two particles next to each other => bad news bears
-          if distance == 0.0 {
+          if distance_sq == 0.0 {
             if (id as u8) < neighbor {
               total_position_delta +=
                 (p.density_lambda + n.density_lambda) * PARTICLE_MASS * vector![1.0, 0.0];
@@ -173,11 +177,12 @@ impl<const N: usize> Simulation<N> {
             continue;
           }
 
-          if distance >= self.index.radius() {
+          if distance_sq >= radius_sq {
             continue;
           }
 
-          let kernel_gradient = kernel_spiky_gradient(delta, self.index.radius());
+          let distance = libm::sqrtf(distance_sq);
+          let kernel_gradient = kernel_spiky_gradient(delta, distance, self.index.radius());
           let s_corr = tensile_correction(distance, self.index.radius());
 
           // This makes the correction symmetric:
@@ -256,11 +261,10 @@ fn kernel_poly6(distance: f32, radius: f32) -> f32 {
   coeff * (radius.pow2() - distance.pow2()).pow3()
 }
 
-fn kernel_spiky_gradient(displacement: Vector2<f32>, radius: f32) -> Vector2<f32> {
+fn kernel_spiky_gradient(displacement: Vector2<f32>, distance: f32, radius: f32) -> Vector2<f32> {
   const NUMERATOR_2D: f32 = -30.0;
   const FACTOR_2D: f32 = 1.0;
 
-  let distance = displacement.norm();
   if distance == 0.0 || distance >= radius {
     return vector![0.0, 0.0];
   }
