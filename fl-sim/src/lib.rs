@@ -13,9 +13,10 @@ extern crate alloc;
 pub extern crate nalgebra;
 
 pub struct Simulation<const N: usize> {
-  size:      Vector2<f32>,
-  particles: [Particle; N],
-  pub index: SpatialIndex<N>,
+  size:        Vector2<f32>,
+  particles:   [Particle; N],
+  pub index:   SpatialIndex<N>,
+  pub gravity: Vector2<f32>,
 
   barriers: Vec<(Point2<f32>, Point2<f32>)>,
 }
@@ -30,7 +31,6 @@ pub struct Particle {
   predicted:      Point2<f32>,
 }
 
-const GRAVITY: Vector2<f32> = vector![0.0 / FROUDE_NUMBER, -1.0 / FROUDE_NUMBER];
 const REST_DENSITY: f32 = 1.0;
 const DELTA_TIME: f32 = 0.01;
 const PARTICLE_SPACING: f32 = 0.5;
@@ -55,6 +55,7 @@ impl<const N: usize> Simulation<N> {
         prev_position:  point![0.0, 0.0],
         predicted:      point![0.0, 0.0],
       }; N],
+      gravity: Vector2::new(0.0, -1.0),
       index: SpatialIndex::new(size, 2.0 * PARTICLE_SPACING),
       barriers: Vec::new(),
     }
@@ -99,7 +100,7 @@ impl<const N: usize> Simulation<N> {
       // Position Verlet: x_{t+dt} = x_t + (x_t - x_{t-dt}) + a*dt^2
       particle.predicted = particle.position
         + (particle.position - particle.prev_position)
-        + GRAVITY * DELTA_TIME * DELTA_TIME;
+        + self.gravity / FROUDE_NUMBER * DELTA_TIME * DELTA_TIME;
 
       if particle.predicted.x < 0.0 {
         particle.predicted.x = 0.0;
