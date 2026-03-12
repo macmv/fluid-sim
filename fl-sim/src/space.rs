@@ -36,10 +36,10 @@ impl<const N: usize> SpatialIndex<N> {
     }
   }
 
-  pub fn radius(&self) -> f32 { self.radius }
   pub fn width(&self) -> u8 { self.size.x }
   pub fn height(&self) -> u8 { self.size.y }
-  pub fn cell_count(&self) -> usize { self.cells.len() }
+  pub const fn radius(&self) -> f32 { self.radius }
+  pub const fn cell_count(&self) -> usize { self.cells.len() }
 
   fn pos_to_cell(&self, pos: Point2<f32>) -> Option<u8> {
     if pos.x < 0.0 || pos.y < 0.0 {
