@@ -123,86 +123,8 @@ impl<const N: usize> Simulation<N> {
       self.index.move_particle(id as u8, particle.predicted);
     }
 
-    let radius_sq = self.index.radius() * self.index.radius();
     for _ in 0..ITERATIONS {
-      for id in 0..self.particles.len() {
-        let mut estimated_density = 0.0;
-        let mut gradient_sum = vector![0.0, 0.0];
-        let mut gradient_sum_squared = 0.0;
-
-        for neighbor in self.index.neighbors(id as u32) {
-          let p = &self.particles[id];
-          let n = &self.particles[neighbor as usize];
-          let delta = p.predicted - n.predicted;
-          let distance_sq = norm_squared(delta);
-
-          if distance_sq >= radius_sq {
-            continue;
-          }
-
-          let distance = distance_sq.sqrt();
-          let weight = kernel_poly6(distance, self.index.radius());
-          estimated_density += PARTICLE_MASS * weight;
-
-          let gradient = kernel_spiky_gradient(delta, distance, self.index.radius())
-            * (PARTICLE_MASS / REST_DENSITY);
-          gradient_sum += gradient;
-          gradient_sum_squared += norm_squared(gradient);
-        }
-
-        gradient_sum_squared += norm_squared(gradient_sum);
-        let density_constraint = (estimated_density / REST_DENSITY - 1.0).max(-0.005);
-
-        self.particles[id].density = estimated_density;
-        self.particles[id].density_lambda =
-          -density_constraint / (gradient_sum_squared + LAMBDA_EPSILON);
-      }
-
-      let mut position_deltas = [vector![0.0, 0.0]; N];
-      for id in 0..self.particles.len() {
-        let mut total_position_delta = vector![0.0, 0.0];
-
-        for neighbor in self.index.neighbors(id as u32) {
-          let p = &self.particles[id];
-          let n = &self.particles[neighbor as usize];
-          let delta = p.predicted - n.predicted;
-          let distance_sq = norm_squared(delta);
-
-          // Two particles next to each other => bad news bears
-          if distance_sq == 0.0 {
-            if (id as u8) < neighbor {
-              total_position_delta +=
-                (p.density_lambda + n.density_lambda) * PARTICLE_MASS * vector![1.0, 0.0];
-            }
-            continue;
-          }
-
-          if distance_sq >= radius_sq {
-            continue;
-          }
-
-          let distance = distance_sq.sqrt();
-          let kernel_gradient = kernel_spiky_gradient(delta, distance, self.index.radius());
-          let s_corr = tensile_correction(distance, self.index.radius());
-
-          // This makes the correction symmetric:
-          // equal and opposite influence between i and j (momentum-friendly).
-          total_position_delta +=
-            (p.density_lambda + n.density_lambda + s_corr) * PARTICLE_MASS * kernel_gradient;
-        }
-
-        position_deltas[id] = total_position_delta / REST_DENSITY;
-      }
-
-      for id in 0..self.particles.len() {
-        self.particles[id].predicted += position_deltas[id];
-        self.particles[id].predicted.x = self.particles[id].predicted.x.clamp(0.0, self.size.x);
-        self.particles[id].predicted.y = self.particles[id].predicted.y.clamp(0.0, self.size.y);
-        for &(min, max) in &self.barriers {
-          project_out_of_barrier(&mut self.particles[id].predicted, min, max);
-        }
-        self.index.move_particle(id as u8, self.particles[id].predicted);
-      }
+      self.tick_iteration();
     }
 
     for particle in self.particles.iter_mut() {
@@ -231,6 +153,88 @@ impl<const N: usize> Simulation<N> {
   }
 
   pub fn particles(&self) -> impl Iterator<Item = &Particle> { self.particles.iter() }
+
+  fn tick_iteration(&mut self) {
+    let radius_sq = self.index.radius() * self.index.radius();
+    for id in 0..self.particles.len() {
+      let mut estimated_density = 0.0;
+      let mut gradient_sum = vector![0.0, 0.0];
+      let mut gradient_sum_squared = 0.0;
+
+      for neighbor in self.index.neighbors(id as u32) {
+        let p = &self.particles[id];
+        let n = &self.particles[neighbor as usize];
+        let delta = p.predicted - n.predicted;
+        let distance_sq = norm_squared(delta);
+
+        if distance_sq >= radius_sq {
+          continue;
+        }
+
+        let distance = distance_sq.sqrt();
+        let weight = kernel_poly6(distance, self.index.radius());
+        estimated_density += PARTICLE_MASS * weight;
+
+        let gradient = kernel_spiky_gradient(delta, distance, self.index.radius())
+          * (PARTICLE_MASS / REST_DENSITY);
+        gradient_sum += gradient;
+        gradient_sum_squared += norm_squared(gradient);
+      }
+
+      gradient_sum_squared += norm_squared(gradient_sum);
+      let density_constraint = (estimated_density / REST_DENSITY - 1.0).max(-0.005);
+
+      self.particles[id].density = estimated_density;
+      self.particles[id].density_lambda =
+        -density_constraint / (gradient_sum_squared + LAMBDA_EPSILON);
+    }
+
+    let mut position_deltas = [vector![0.0, 0.0]; N];
+    for id in 0..self.particles.len() {
+      let mut total_position_delta = vector![0.0, 0.0];
+
+      for neighbor in self.index.neighbors(id as u32) {
+        let p = &self.particles[id];
+        let n = &self.particles[neighbor as usize];
+        let delta = p.predicted - n.predicted;
+        let distance_sq = norm_squared(delta);
+
+        // Two particles next to each other => bad news bears
+        if distance_sq == 0.0 {
+          if (id as u8) < neighbor {
+            total_position_delta +=
+              (p.density_lambda + n.density_lambda) * PARTICLE_MASS * vector![1.0, 0.0];
+          }
+          continue;
+        }
+
+        if distance_sq >= radius_sq {
+          continue;
+        }
+
+        let distance = distance_sq.sqrt();
+        let kernel_gradient = kernel_spiky_gradient(delta, distance, self.index.radius());
+        let s_corr = tensile_correction(distance, self.index.radius());
+
+        // This makes the correction symmetric:
+        // equal and opposite influence between i and j (momentum-friendly).
+        total_position_delta +=
+          (p.density_lambda + n.density_lambda + s_corr) * PARTICLE_MASS * kernel_gradient;
+      }
+
+      position_deltas[id] = total_position_delta / REST_DENSITY;
+    }
+
+    for id in 0..self.particles.len() {
+      self.particles[id].predicted += position_deltas[id];
+      self.particles[id].predicted.x = self.particles[id].predicted.x.clamp(0.0, self.size.x);
+      self.particles[id].predicted.y = self.particles[id].predicted.y.clamp(0.0, self.size.y);
+      for &(min, max) in &self.barriers {
+        project_out_of_barrier(&mut self.particles[id].predicted, min, max);
+      }
+      self.index.move_particle(id as u8, self.particles[id].predicted);
+    }
+  }
 }
 
 trait Float {
