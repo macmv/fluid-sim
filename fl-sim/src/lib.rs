@@ -194,7 +194,7 @@ impl<const N: usize> Simulation<N> {
         let weight = kernel_poly6(distance, self.index.radius());
         estimated_density += PARTICLE_MASS * weight;
 
-        let gradient = kernel_spiky_gradient(delta, distance, self.index.radius())
+        let gradient = kernel_spiky_gradient_internal(delta, distance, self.index.radius())
           * (PARTICLE_MASS / REST_DENSITY);
         gradient_sum += gradient;
         gradient_sum_squared += norm_squared(gradient);
@@ -236,7 +236,7 @@ impl<const N: usize> Simulation<N> {
         }
 
         let distance = distance_sq.sqrt();
-        let kernel_gradient = kernel_spiky_gradient(delta, distance, self.index.radius());
+        let kernel_gradient = kernel_spiky_gradient_internal(delta, distance, self.index.radius());
         let s_corr = tensile_correction(distance, self.index.radius());
         #[cfg(feature = "demo")]
         let s_corr = if self.feature_no_tensile { 0.0 } else { s_corr };
@@ -294,7 +294,7 @@ impl Float for f32 {
 
 fn norm_squared(vector: Vector2<f32>) -> f32 { vector.x * vector.x + vector.y * vector.y }
 
-fn kernel_poly6(distance: f32, radius: f32) -> f32 {
+pub fn kernel_poly6(distance: f32, radius: f32) -> f32 {
   const NUMERATOR_2D: f32 = 4.0;
   const FACTOR_2D: f32 = 1.0;
 
@@ -306,7 +306,15 @@ fn kernel_poly6(distance: f32, radius: f32) -> f32 {
   coeff * (radius.pow2() - distance.pow2()).pow3()
 }
 
-fn kernel_spiky_gradient(displacement: Vector2<f32>, distance: f32, radius: f32) -> Vector2<f32> {
+pub fn kernel_spiky_gradient(displacement: Vector2<f32>, radius: f32) -> Vector2<f32> {
+  kernel_spiky_gradient_internal(displacement, norm_squared(displacement).sqrt(), radius)
+}
+
+fn kernel_spiky_gradient_internal(
+  displacement: Vector2<f32>,
+  distance: f32,
+  radius: f32,
+) -> Vector2<f32> {
   const NUMERATOR_2D: f32 = -30.0;
   const FACTOR_2D: f32 = 1.0;
 
@@ -318,7 +326,7 @@ fn kernel_spiky_gradient(displacement: Vector2<f32>, distance: f32, radius: f32)
   (displacement / distance) * (coeff * (radius - distance).pow2())
 }
 
-fn tensile_correction(distance: f32, radius: f32) -> f32 {
+pub fn tensile_correction(distance: f32, radius: f32) -> f32 {
   let numerator = kernel_poly6(distance, radius);
   let denominator = kernel_poly6(SCORR_Q * radius, radius);
   if denominator <= 0.0 {
