@@ -9,6 +9,7 @@ nalgebra = { version = "0.34.1", default-features = false, features = ["macros"]
 
 [features]
 default = []
+demo = []
 std = ["nalgebra/std"]
 
 [dev-dependencies]

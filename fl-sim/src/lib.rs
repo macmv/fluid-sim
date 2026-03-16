@@ -18,6 +18,13 @@ pub struct Simulation<const N: usize> {
   pub index:   SpatialIndex<N>,
   pub gravity: Vector2<f32>,
 
+  #[cfg(feature = "demo")]
+  pub feature_descent:      bool,
+  #[cfg(feature = "demo")]
+  pub feature_naive_lambda: bool,
+  #[cfg(feature = "demo")]
+  pub feature_no_tensile:   bool,
+
   barriers: Vec<(Point2<f32>, Point2<f32>)>,
 }
 
@@ -58,6 +65,13 @@ impl<const N: usize> Simulation<N> {
       gravity: Vector2::new(0.0, -1.0),
       index: SpatialIndex::new(size, 2.0 * PARTICLE_SPACING),
       barriers: Vec::new(),
+
+      #[cfg(feature = "demo")]
+      feature_descent: true,
+      #[cfg(feature = "demo")]
+      feature_naive_lambda: true,
+      #[cfg(feature = "demo")]
+      feature_no_tensile: true,
     }
   }
 
@@ -155,7 +169,12 @@ impl<const N: usize> Simulation<N> {
   pub fn particles(&self) -> impl Iterator<Item = &Particle> { self.particles.iter() }
 
   fn tick_iteration(&mut self) {
+    #[cfg(feature = "demo")]
+    if !self.feature_descent {
+      return;
+    }
     let radius_sq = self.index.radius() * self.index.radius();
+
     for id in 0..self.particles.len() {
       let mut estimated_density = 0.0;
       let mut gradient_sum = vector![0.0, 0.0];
@@ -187,6 +206,10 @@ impl<const N: usize> Simulation<N> {
       self.particles[id].density = estimated_density;
       self.particles[id].density_lambda =
         -density_constraint / (gradient_sum_squared + LAMBDA_EPSILON);
+      #[cfg(feature = "demo")]
+      if self.feature_naive_lambda {
+        self.particles[id].density_lambda = (-estimated_density / REST_DENSITY - 1.0).max(-0.005);
+      }
     }
 
     let mut position_deltas = [vector![0.0, 0.0]; N];
@@ -215,6 +238,8 @@ impl<const N: usize> Simulation<N> {
         let distance = distance_sq.sqrt();
         let kernel_gradient = kernel_spiky_gradient(delta, distance, self.index.radius());
         let s_corr = tensile_correction(distance, self.index.radius());
+        #[cfg(feature = "demo")]
+        let s_corr = if self.feature_no_tensile { 0.0 } else { s_corr };
 
         // This makes the correction symmetric:
         // equal and opposite influence between i and j (momentum-friendly).
