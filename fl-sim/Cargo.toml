@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 libm = { version = "0.2.16" }
-nalgebra = { version = "0.34.1", default-features = false, features = ["macros", "libm"] }
+nalgebra = { version = "0.34.1", default-features = false, features = ["macros"] }
 
 [features]
 default = []
